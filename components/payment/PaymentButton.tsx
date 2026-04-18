@@ -5,35 +5,20 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { ShoppingCart, Loader } from 'lucide-react'
+import { ShoppingCart, Loader, X, Phone } from 'lucide-react'
 import type { Course } from '@/types'
 import { formatPrice } from '@/lib/utils'
-
-// Import dynamique du SDK Feexpay
-import dynamic from 'next/dynamic'
-
-const FeexPayProvider = dynamic(
-  () => import('@feexpay/react-sdk').then((m) => m.FeexPayProvider),
-  { ssr: false }
-)
-
-const FeexPayButton = dynamic(
-  () => import('@feexpay/react-sdk').then((m) => m.FeexPayButton),
-  { ssr: false }
-)
 
 interface PaymentButtonProps {
   course: Course
   onSuccess?: () => void
 }
 
-export default function PaymentButton({
-  course,
-  onSuccess,
-}: PaymentButtonProps) {
-  const { firebaseUser, userProfile, isAuthenticated } = useAuth()
+export default function PaymentButton({ course, onSuccess }: PaymentButtonProps) {
+  const { isAuthenticated } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [paymentData, setPaymentData] = useState<{
     customId: string
     amount: number
@@ -43,27 +28,16 @@ export default function PaymentButton({
     userFullname: string
     courseTitle: string
   } | null>(null)
-  const [showPayment, setShowPayment] = useState(false)
 
-  // Si formation gratuite
   if (course.price === 0) {
-    return (
-      <EnrollFreeButton
-        courseId={course.id}
-        instructorId={course.instructorId}
-        accessType={course.accessType}
-        accessDuration={course.accessDuration}
-        onSuccess={onSuccess}
-      />
-    )
+    return <EnrollFreeButton course={course} onSuccess={onSuccess} />
   }
 
-  const handleInitiatePayment = async () => {
+  const handleInitiate = async () => {
     if (!isAuthenticated) {
-      router.push(`/login?redirect=/courses/${course.id}`)
+      router.push('/login?redirect=/courses/' + course.id)
       return
     }
-
     setLoading(true)
     try {
       const res = await fetch('/api/payments/initiate', {
@@ -72,144 +46,147 @@ export default function PaymentButton({
         credentials: 'include',
         body: JSON.stringify({ courseId: course.id }),
       })
-
       const data = await res.json()
-
       if (!res.ok) {
         if (res.status === 409) {
-          toast.error('Vous êtes déjà inscrit à cette formation')
+          toast.error('Vous etes deja inscrit')
           router.push('/dashboard')
           return
         }
         throw new Error(data.error)
       }
-
       setPaymentData(data)
-      setShowPayment(true)
-    } catch (error) {
+      setShowModal(true)
+    } catch {
       toast.error('Erreur lors de l\'initialisation du paiement')
     } finally {
       setLoading(false)
     }
   }
 
-  // Callback après paiement Feexpay
-  const handlePaymentCallback = async (response: {
-    status: string
-    reference?: string
-  }) => {
-    if (response.status === 'SUCCESS' || response.status === 'success') {
-      toast.loading('Vérification du paiement...', { id: 'verify' })
-
-      // Polling pour vérifier que le webhook a été reçu
-      let attempts = 0
-      const maxAttempts = 10
-
-      const checkPayment = async () => {
-        attempts++
-        try {
-          const res = await fetch(
-            `/api/payments/verify?customId=${paymentData?.customId}`,
-            { credentials: 'include' }
-          )
-          const data = await res.json()
-
-          if (data.hasAccess) {
-            toast.success('Paiement confirmé ! Accès débloqué.', {
-              id: 'verify',
-            })
-            setShowPayment(false)
-            onSuccess?.()
-            router.push(`/dashboard`)
-          } else if (attempts < maxAttempts) {
-            setTimeout(checkPayment, 2000)
-          } else {
-            toast.success(
-              'Paiement reçu. Votre accès sera disponible dans quelques instants.',
-              { id: 'verify', duration: 6000 }
-            )
-            router.push('/dashboard')
-          }
-        } catch {
-          toast.error('Erreur de vérification', { id: 'verify' })
-        }
+  const handleFeexpayRedirect = () => {
+    if (!paymentData) return
+    // Construire l'URL Feexpay inline (sans SDK)
+    const params = new URLSearchParams({
+      amount: String(paymentData.amount),
+      currency: paymentData.currency,
+      description: 'Formation: ' + paymentData.courseTitle,
+      token: process.env.NEXT_PUBLIC_FEEXPAY_API_KEY || '',
+      id: paymentData.shopId,
+      customId: paymentData.customId,
+      mode: 'LIVE',
+      callback_url: window.location.origin + '/api/payments/webhook',
+      email: paymentData.userEmail,
+      fullname: paymentData.userFullname,
+    })
+    // Ouvrir Feexpay dans une popup
+    const popup = window.open(
+      'https://feexpay.me/pay?' + params.toString(),
+      'FeexPay',
+      'width=500,height=600,scrollbars=yes'
+    )
+    // Vérifier la fermeture de la popup
+    const timer = setInterval(async () => {
+      if (popup?.closed) {
+        clearInterval(timer)
+        setShowModal(false)
+        toast.loading('Verification du paiement...', { id: 'verify' })
+        await checkPayment(paymentData.customId)
       }
+    }, 1000)
+  }
 
-      setTimeout(checkPayment, 3000)
-    } else {
-      toast.error('Paiement échoué ou annulé')
-      setShowPayment(false)
+  const checkPayment = async (customId: string) => {
+    let attempts = 0
+    const check = async () => {
+      attempts++
+      try {
+        const res = await fetch('/api/payments/verify?customId=' + customId, {
+          credentials: 'include',
+        })
+        const data = await res.json()
+        if (data.hasAccess) {
+          toast.success('Paiement confirme ! Acces debloque.', { id: 'verify' })
+          onSuccess?.()
+          router.push('/dashboard')
+        } else if (attempts < 8) {
+          setTimeout(check, 2500)
+        } else {
+          toast.success('Paiement recu. Acces disponible sous peu.', { id: 'verify', duration: 6000 })
+          router.push('/dashboard')
+        }
+      } catch {
+        toast.error('Erreur de verification', { id: 'verify' })
+      }
     }
+    setTimeout(check, 3000)
   }
 
   return (
-    <div>
-      {!showPayment ? (
-        <button
-          onClick={handleInitiatePayment}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-2xl transition-all disabled:opacity-50 text-lg shadow-lg shadow-orange-200"
-        >
-          {loading ? (
-            <Loader size={22} className="animate-spin" />
-          ) : (
-            <>
-              <ShoppingCart size={22} />
-              Acheter — {formatPrice(course.price, course.currency)}
-            </>
-          )}
-        </button>
-      ) : paymentData ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm text-slate-500 text-center mb-4">
-            Finalisez votre paiement Mobile Money
-          </p>
-          {/* Import CSS Feexpay */}
-          <style>{`@import url('https://cdn.jsdelivr.net/npm/@feexpay/react-sdk/dist/style.css');`}</style>
-          <FeexPayProvider>
-            <FeexPayButton
-              amount={paymentData.amount}
-              description={`Formation: ${paymentData.courseTitle}`}
-              token={process.env.NEXT_PUBLIC_FEEXPAY_API_KEY || ''}
-              id={paymentData.shopId}
-              customId={paymentData.customId}
-              callback_info={{
-                email: paymentData.userEmail,
-                fullname: paymentData.userFullname,
-                courseId: course.id,
-              }}
-              mode="LIVE"
-              case="MOBILE"
-              currency={paymentData.currency as 'XOF' | 'XAF'}
-              callback={handlePaymentCallback}
-              buttonText={`Payer ${formatPrice(paymentData.amount, paymentData.currency)}`}
-              buttonClass="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl transition-all"
-            />
-          </FeexPayProvider>
-          <button
-            onClick={() => setShowPayment(false)}
-            className="w-full mt-3 text-sm text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            Annuler
-          </button>
+    <>
+      <button
+        onClick={handleInitiate}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-2xl transition-all disabled:opacity-50 text-lg shadow-lg shadow-orange-200"
+      >
+        {loading ? (
+          <Loader size={22} className="animate-spin" />
+        ) : (
+          <>
+            <ShoppingCart size={22} />
+            Acheter - {formatPrice(course.price, course.currency)}
+          </>
+        )}
+      </button>
+
+      {showModal && paymentData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-800">Finaliser le paiement</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 mb-4">
+              <p className="text-sm text-slate-600 mb-1">Formation</p>
+              <p className="font-semibold text-slate-800">{paymentData.courseTitle}</p>
+              <p className="text-2xl font-bold text-sky-600 mt-2">
+                {formatPrice(paymentData.amount, paymentData.currency)}
+              </p>
+            </div>
+
+            <button
+              onClick={handleFeexpayRedirect}
+              className="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 rounded-xl transition-all mb-3"
+            >
+              <Phone size={20} />
+              Payer par Mobile Money
+            </button>
+
+            <p className="text-xs text-slate-400 text-center">
+              Vous serez redirige vers Feexpay pour finaliser le paiement
+            </p>
+
+            <button
+              onClick={() => setShowModal(false)}
+              className="w-full mt-3 text-sm text-slate-400 hover:text-slate-600 transition-colors py-2"
+            >
+              Annuler
+            </button>
+          </div>
         </div>
-      ) : null}
-    </div>
+      )}
+    </>
   )
 }
 
-// ── Inscription formation gratuite ───────────────────────────
 function EnrollFreeButton({
-  courseId,
-  instructorId,
-  accessType,
-  accessDuration,
+  course,
   onSuccess,
 }: {
-  courseId: string
-  instructorId: string
-  accessType: string
-  accessDuration?: number
+  course: Course
   onSuccess?: () => void
 }) {
   const { isAuthenticated } = useAuth()
@@ -218,31 +195,32 @@ function EnrollFreeButton({
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
-      router.push(`/login?redirect=/courses/${courseId}`)
+      router.push('/login?redirect=/courses/' + course.id)
       return
     }
-
     setLoading(true)
     try {
       const res = await fetch('/api/enrollments/free', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ courseId, instructorId, accessType, accessDuration }),
+        body: JSON.stringify({
+          courseId: course.id,
+          instructorId: course.instructorId,
+          accessType: course.accessType,
+          accessDuration: course.accessDuration,
+        }),
       })
-
       const data = await res.json()
-
       if (!res.ok) {
         if (res.status === 409) {
-          toast.error('Vous êtes déjà inscrit')
+          toast.error('Vous etes deja inscrit')
           router.push('/dashboard')
           return
         }
         throw new Error(data.error)
       }
-
-      toast.success('Inscription réussie !')
+      toast.success('Inscription reussie !')
       onSuccess?.()
       router.push('/dashboard')
     } catch {
@@ -258,11 +236,7 @@ function EnrollFreeButton({
       disabled={loading}
       className="w-full flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-2xl transition-all disabled:opacity-50 text-lg"
     >
-      {loading ? (
-        <Loader size={22} className="animate-spin" />
-      ) : (
-        'S\'inscrire gratuitement'
-      )}
+      {loading ? <Loader size={22} className="animate-spin" /> : "S'inscrire gratuitement"}
     </button>
   )
 }
