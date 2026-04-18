@@ -8,13 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Webhook Feexpay reçu:', body)
 
-    const {
-      status,
-      reference,
-      custom_id,
-      amount,
-      currency,
-    } = body
+    const { status, reference, custom_id } = body
 
     if (!custom_id) {
       return NextResponse.json(
@@ -23,7 +17,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Retrouver le paiement via customId
     const paymentSnap = await adminDb
       .collection('payments')
       .where('customId', '==', custom_id)
@@ -41,12 +34,10 @@ export async function POST(request: NextRequest) {
     const paymentDoc = paymentSnap.docs[0]
     const payment = paymentDoc.data()
 
-    // Éviter le double traitement
     if (payment.webhookVerified && payment.status === 'success') {
       return NextResponse.json({ message: 'Déjà traité' })
     }
 
-    // Mettre à jour le statut du paiement
     const newStatus = status === 'SUCCESS' ? 'success' : 'failed'
 
     await paymentDoc.ref.update({
@@ -56,9 +47,7 @@ export async function POST(request: NextRequest) {
       updatedAt: FieldValue.serverTimestamp(),
     })
 
-    // Si paiement réussi → créer l'inscription
     if (newStatus === 'success') {
-      // Récupérer la formation pour connaitre le type d'accès
       const courseSnap = await adminDb
         .collection('courses')
         .doc(payment.courseId)
@@ -66,7 +55,6 @@ export async function POST(request: NextRequest) {
 
       const course = courseSnap.data()!
 
-      // Calculer la date d'expiration si accès limité
       let expiresAt = null
       if (course.accessType === 'limited' && course.accessDuration) {
         const expDate = new Date()
@@ -74,7 +62,6 @@ export async function POST(request: NextRequest) {
         expiresAt = expDate
       }
 
-      // Vérifier si une inscription existe déjà (éviter doublons)
       const existingEnrollment = await adminDb
         .collection('enrollments')
         .where('userId', '==', payment.userId)
@@ -83,14 +70,13 @@ export async function POST(request: NextRequest) {
         .get()
 
       if (existingEnrollment.empty) {
-        // Créer l'inscription
         await adminDb.collection('enrollments').add({
           userId: payment.userId,
           courseId: payment.courseId,
           instructorId: payment.instructorId,
           status: 'active',
           accessType: course.accessType,
-          expiresAt: expiresAt,
+          expiresAt,
           progress: {
             completedLessons: [],
             lastLessonId: null,
@@ -99,7 +85,6 @@ export async function POST(request: NextRequest) {
           enrolledAt: FieldValue.serverTimestamp(),
         })
 
-        // Incrémenter les compteurs
         await adminDb
           .collection('instructors')
           .doc(payment.instructorId)
@@ -118,9 +103,4 @@ export async function POST(request: NextRequest) {
     console.error('Erreur webhook:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
-}
-
-// Désactiver la vérification CSRF pour les webhooks
-export const config = {
-  api: { bodyParser: true },
 }
