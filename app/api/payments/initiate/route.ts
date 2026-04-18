@@ -3,10 +3,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb, adminAuth } from '@/lib/firebase/admin'
 import { generatePaymentRef } from '@/lib/feexpay'
 import { FieldValue } from 'firebase-admin/firestore'
+import { paymentLimiter } from '@/lib/rateLimit'
 
 export async function POST(request: NextRequest) {
   try {
-    // Vérifier auth
+    // ── Rate limiting ────────────────────────────────────
+    const ip =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown'
+
+    const limit = paymentLimiter(ip)
+    if (!limit.success) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives. Réessayez dans quelques instants.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(
+              Math.ceil((limit.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
+      )
+    }
+
+    // ── Vérifier auth ────────────────────────────────────
     const token = request.cookies.get('firebase-token')?.value
     if (!token) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
@@ -25,7 +47,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Récupérer la formation
+    // ── Récupérer la formation ───────────────────────────
     const courseSnap = await adminDb
       .collection('courses')
       .doc(courseId)
@@ -40,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     const course = courseSnap.data()!
 
-    // Vérifier que l'élève n'est pas déjà inscrit
+    // ── Vérifier inscription existante ───────────────────
     const existingSnap = await adminDb
       .collection('enrollments')
       .where('userId', '==', uid)
@@ -56,14 +78,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Récupérer le profil utilisateur
+    // ── Récupérer profil utilisateur ─────────────────────
     const userSnap = await adminDb.collection('users').doc(uid).get()
     const user = userSnap.data()!
 
-    // Générer référence unique
+    // ── Générer référence unique ─────────────────────────
     const customId = generatePaymentRef(courseId, uid)
 
-    // Créer le paiement en attente dans Firestore
+    // ── Créer paiement en attente ────────────────────────
     const paymentRef = await adminDb.collection('payments').add({
       userId: uid,
       courseId,

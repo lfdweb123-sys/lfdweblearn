@@ -11,8 +11,8 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>()
 
 interface RateLimitOptions {
-  windowMs: number   // durée fenêtre en ms
-  max: number        // max requêtes par fenêtre
+  windowMs: number
+  max: number
 }
 
 export function rateLimit(options: RateLimitOptions) {
@@ -26,7 +26,6 @@ export function rateLimit(options: RateLimitOptions) {
     const now = Date.now()
     const entry = store.get(identifier)
 
-    // Réinitialiser si fenêtre expirée
     if (!entry || now > entry.resetAt) {
       const newEntry: RateLimitEntry = {
         count: 1,
@@ -36,7 +35,6 @@ export function rateLimit(options: RateLimitOptions) {
       return { success: true, remaining: max - 1, resetAt: newEntry.resetAt }
     }
 
-    // Incrémenter le compteur
     entry.count++
     store.set(identifier, entry)
 
@@ -52,18 +50,17 @@ export function rateLimit(options: RateLimitOptions) {
   }
 }
 
-// Limiteurs prédéfinis
 export const paymentLimiter = rateLimit({
-  windowMs: 60 * 1000,  // 1 minute
-  max: 5,               // 5 tentatives de paiement par minute
+  windowMs: 60 * 1000,
+  max: 5,
 })
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 10,                    // 10 tentatives de connexion
+  windowMs: 15 * 60 * 1000,
+  max: 10,
 })
 
 export const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,  // 1 minute
-  max: 60,              // 60 requêtes par minute
+  windowMs: 60 * 1000,
+  max: 60,
 })
