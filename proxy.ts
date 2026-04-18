@@ -10,11 +10,45 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
 
 const AUTH_ROUTES = ['/login', '/register']
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'lfdweblearn.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const hostname = request.headers.get('host') || ''
   const token = request.cookies.get('firebase-token')?.value
 
-  // ── Headers de sécurité globaux ──────────────────────────
+  // ── Gestion domaines personnalisés ───────────────────────
+  const isRootDomain =
+    hostname === ROOT_DOMAIN ||
+    hostname === `www.${ROOT_DOMAIN}` ||
+    hostname.includes('localhost') ||
+    hostname.includes('vercel.app')
+
+  if (!isRootDomain) {
+    // Domaine personnalisé → chercher le formateur
+    // Réécrire vers /api/resolve-domain pour le SSR
+    const url = request.nextUrl.clone()
+
+    // Vérifier si c'est un sous-domaine lfdweblearn.com
+    const isSubdomain =
+      hostname.endsWith(`.${ROOT_DOMAIN}`) &&
+      !hostname.startsWith('www.')
+
+    if (isSubdomain) {
+      const slug = hostname.replace(`.${ROOT_DOMAIN}`, '')
+      url.pathname = `/${slug}${pathname === '/' ? '' : pathname}`
+      return NextResponse.rewrite(url)
+    }
+
+    // Domaine externe personnalisé
+    url.searchParams.set('customDomain', hostname)
+    url.pathname = '/api/resolve-domain'
+    // Laisser passer, géré par la page dynamique
+    return NextResponse.next()
+  }
+
+  // ── Headers de sécurité ──────────────────────────────────
   const response = NextResponse.next()
 
   response.headers.set('X-Content-Type-Options', 'nosniff')
@@ -26,7 +60,7 @@ export async function proxy(request: NextRequest) {
     'camera=(), microphone=(), geolocation=()'
   )
 
-  // ── Protection routes /learn (sécurité renforcée) ────────
+  // ── CSP renforcé pour /learn ─────────────────────────────
   if (pathname.startsWith('/learn')) {
     response.headers.set(
       'Content-Security-Policy',
@@ -41,10 +75,13 @@ export async function proxy(request: NextRequest) {
         "frame-ancestors 'none'",
       ].join('; ')
     )
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    response.headers.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate'
+    )
   }
 
-  // ── Vérification routes protégées ────────────────────────
+  // ── Protection routes ────────────────────────────────────
   const isProtected = Object.keys(PROTECTED_ROUTES).some((route) =>
     pathname.startsWith(route)
   )
@@ -55,12 +92,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // ── Rediriger si déjà connecté ───────────────────────────
   if (token && AUTH_ROUTES.includes(pathname)) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // ── Bloquer les API sensibles sans token ─────────────────
+  // ── Protection APIs ──────────────────────────────────────
   const PROTECTED_API = [
     '/api/media/signed-url',
     '/api/media/upload-video',
@@ -82,7 +118,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)',],
 }
