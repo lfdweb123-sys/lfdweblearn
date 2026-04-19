@@ -128,12 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             Votre compte a ete desactive par un administrateur.
             Contactez le support pour plus d'informations.
           </p>
-          
-            href="mailto:contact@lfdweblearn.com"
-            className="inline-block bg-sky-600 hover:bg-sky-700 text-white font-semibold px-6 py-3 rounded-xl transition-all text-sm"
-          >
-            Contacter le support
-          </a>
+          <a href="mailto:contact@lfdweblearn.com" className="inline-block bg-sky-600 hover:bg-sky-700 text-white font-semibold px-6 py-3 rounded-xl transition-all text-sm">Contacter le support</a>
         </div>
       </div>
     )
