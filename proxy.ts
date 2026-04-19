@@ -32,18 +32,20 @@ export async function proxy(request: NextRequest) {
     hostname.includes('vercel.app') ||
     hostname.includes('localhost')
 
+  // ── Sous-domaine formateur : slug.lfdweblearn.com ────
   if (!isRootDomain && hostname.endsWith('.' + ROOT_DOMAIN)) {
     const slug = hostname.replace('.' + ROOT_DOMAIN, '')
+
+    // Rewrite UNIQUEMENT le pathname, pas le hostname
     const url = request.nextUrl.clone()
     url.pathname = '/' + slug + (pathname === '/' ? '' : pathname)
-    url.hostname = ROOT_DOMAIN
-    url.port = ''
     return NextResponse.rewrite(url)
   }
 
+  // ── Domaine personnalise externe ─────────────────────
   if (!isRootDomain) {
     try {
-      const resolveUrl = new URL('/api/resolve-domain', 'https://' + ROOT_DOMAIN)
+      const resolveUrl = new URL('/api/resolve-domain', request.url)
       resolveUrl.searchParams.set('domain', hostname)
       const res = await fetch(resolveUrl.toString())
       if (res.ok) {
@@ -51,8 +53,6 @@ export async function proxy(request: NextRequest) {
         if (data.slug) {
           const url = request.nextUrl.clone()
           url.pathname = '/' + data.slug + (pathname === '/' ? '' : pathname)
-          url.hostname = ROOT_DOMAIN
-          url.port = ''
           return NextResponse.rewrite(url)
         }
       }
@@ -60,11 +60,10 @@ export async function proxy(request: NextRequest) {
 
     const url = request.nextUrl.clone()
     url.pathname = '/instructor-not-found'
-    url.hostname = ROOT_DOMAIN
-    url.port = ''
     return NextResponse.rewrite(url)
   }
 
+  // ── Headers securite ─────────────────────────────────
   const response = NextResponse.next()
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
@@ -88,6 +87,7 @@ export async function proxy(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
   }
 
+  // ── Protection routes ─────────────────────────────────
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r))
   if (isProtected && !token) {
     const loginUrl = new URL('/login', request.url)
@@ -99,6 +99,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
+  // ── Protection APIs ───────────────────────────────────
   const isProtectedApi = PROTECTED_API.some((r) => pathname.startsWith(r))
   if (isProtectedApi && !token) {
     return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
@@ -110,4 +111,4 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
-// updated: 2026-04-19 08:39:16
+// 2026-04-19 08:42:52
