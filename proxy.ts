@@ -13,33 +13,27 @@ const PROTECTED_API = [
   '/api/instructor',
 ]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hostname = request.headers.get('host') || ''
   const token = request.cookies.get('firebase-token')?.value
 
-  // ── Ignorer les fichiers statiques ───────────────────
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
     pathname.startsWith('/static') ||
     pathname.includes('.')
   ) {
     return NextResponse.next()
   }
 
-  // ── Détecter si c'est le domaine principal ───────────
   const isRootDomain =
     hostname === ROOT_DOMAIN ||
     hostname === 'www.' + ROOT_DOMAIN ||
     hostname.includes('vercel.app') ||
     hostname.includes('localhost')
 
-  // ── Sous-domaine formateur : slug.lfdweblearn.com ────
   if (!isRootDomain && hostname.endsWith('.' + ROOT_DOMAIN)) {
     const slug = hostname.replace('.' + ROOT_DOMAIN, '')
-
-    // Réécrire vers /[slug] qui est la page publique formateur
     const url = request.nextUrl.clone()
     url.pathname = '/' + slug + (pathname === '/' ? '' : pathname)
     url.hostname = ROOT_DOMAIN
@@ -47,7 +41,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url)
   }
 
-  // ── Domaine personnalisé externe ─────────────────────
   if (!isRootDomain) {
     try {
       const resolveUrl = new URL('/api/resolve-domain', 'https://' + ROOT_DOMAIN)
@@ -72,7 +65,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url)
   }
 
-  // ── Headers sécurité ─────────────────────────────────
   const response = NextResponse.next()
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
@@ -96,7 +88,6 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
   }
 
-  // ── Protection routes ─────────────────────────────────
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r))
   if (isProtected && !token) {
     const loginUrl = new URL('/login', request.url)
@@ -108,7 +99,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // ── Protection APIs ───────────────────────────────────
   const isProtectedApi = PROTECTED_API.some((r) => pathname.startsWith(r))
   if (isProtectedApi && !token) {
     return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
@@ -120,3 +110,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
+// updated: 2026-04-19 08:39:16
