@@ -61,9 +61,10 @@ export default function InstructorSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-100 flex flex-col min-h-screen sticky top-0">
+    <aside className="w-64 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0 overflow-y-auto">
+
       {/* Logo */}
-      <div className="p-6 border-b border-slate-100">
+      <div className="p-6 border-b border-slate-100 flex-shrink-0">
         <Link href="/instructor">
           <span className="text-xl font-bold text-sky-600">LFD</span>
           <span className="text-xl font-bold text-orange-500"> Web Learn</span>
@@ -72,7 +73,7 @@ export default function InstructorSidebar() {
       </div>
 
       {/* Profil */}
-      <div className="px-4 py-4 border-b border-slate-100">
+      <div className="px-4 py-4 border-b border-slate-100 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-semibold text-sm">
             {userProfile?.displayName?.charAt(0).toUpperCase() || 'F'}
@@ -119,7 +120,7 @@ export default function InstructorSidebar() {
       </nav>
 
       {/* Déconnexion */}
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t border-slate-100 flex-shrink-0">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all w-full"
