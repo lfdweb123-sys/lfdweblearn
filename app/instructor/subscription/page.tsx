@@ -37,6 +37,8 @@ const PLANS = [
     ],
     featured: false,
     icon: Zap,
+    bg: '#0284c7',
+    color: 'white',
   },
   {
     id: 'yearly',
@@ -55,6 +57,8 @@ const PLANS = [
     ],
     featured: true,
     icon: Crown,
+    bg: 'white',
+    color: '#0284c7',
   },
 ]
 
@@ -125,17 +129,19 @@ export default function InstructorSubscriptionPage() {
       </div>
 
       {isActive && (
-        <div className="bg-gradient-to-r from-sky-500 to-sky-600 rounded-2xl p-5 text-white flex items-center justify-between">
+        <div style={{ background: 'linear-gradient(to right, #0ea5e9, #0284c7)', borderRadius: '16px', padding: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <Crown size={20} />
-              <span className="font-bold text-lg">Abonnement Pro actif</span>
+              <span style={{ fontWeight: 'bold', fontSize: '18px' }}>Abonnement Pro actif</span>
             </div>
-            <p className="text-sky-100 text-sm">
+            <p style={{ color: '#bae6fd', fontSize: '14px' }}>
               Plan {currentSubscription.planId === 'yearly' ? 'Annuel' : 'Mensuel'}
             </p>
           </div>
-          <div className="bg-white/20 px-4 py-2 rounded-xl text-sm font-semibold">Actif</div>
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '8px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600' }}>
+            Actif
+          </div>
         </div>
       )}
 
@@ -143,49 +149,95 @@ export default function InstructorSubscriptionPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {PLANS.map((plan) => {
             const Icon = plan.icon
+            const cardBg = plan.featured ? '#0284c7' : 'white'
+            const cardBorder = plan.featured ? '#0284c7' : '#e2e8f0'
+            const titleColor = plan.featured ? 'white' : '#1e293b'
+            const subColor = plan.featured ? '#bae6fd' : '#94a3b8'
+            const featureColor = plan.featured ? '#e0f2fe' : '#475569'
+            const checkColor = plan.featured ? '#bae6fd' : '#22c55e'
+
             return (
               <div
                 key={plan.id}
-                className={'rounded-2xl p-6 border relative ' + (
-                  plan.featured
-                    ? 'bg-sky-600 border-sky-600 text-white shadow-2xl shadow-sky-200'
-                    : 'bg-white border-slate-200'
-                )}
+                style={{
+                  backgroundColor: cardBg,
+                  border: '1px solid ' + cardBorder,
+                  borderRadius: '16px',
+                  padding: '24px',
+                  position: 'relative',
+                  boxShadow: plan.featured ? '0 25px 50px rgba(2,132,199,0.3)' : '0 1px 3px rgba(0,0,0,0.05)',
+                }}
               >
                 {plan.featured && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+                  <span style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#f97316',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    padding: '6px 16px',
+                    borderRadius: '999px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    whiteSpace: 'nowrap',
+                  }}>
                     Meilleure valeur
                   </span>
                 )}
-                <div className={'w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ' + (plan.featured ? 'bg-white/20' : 'bg-sky-50')}>
-                  <Icon size={22} className={plan.featured ? 'text-white' : 'text-sky-600'} />
+
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '12px',
+                  backgroundColor: plan.featured ? 'rgba(255,255,255,0.2)' : '#f0f9ff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '16px',
+                }}>
+                  <Icon size={22} color={plan.featured ? 'white' : '#0284c7'} />
                 </div>
-                <h3 className={'text-xl font-bold mb-1 ' + (plan.featured ? 'text-white' : 'text-slate-800')}>{plan.name}</h3>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className={'text-3xl font-bold ' + (plan.featured ? 'text-white' : 'text-slate-800')}>
+
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: titleColor, marginBottom: '4px' }}>
+                  {plan.name}
+                </h3>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '28px', fontWeight: 'bold', color: titleColor }}>
                     {formatPrice(plan.price, plan.currency)}
                   </span>
-                  <span className={'text-sm mb-1 ' + (plan.featured ? 'text-sky-200' : 'text-slate-400')}>/{plan.period}</span>
+                  <span style={{ fontSize: '14px', color: subColor, marginBottom: '4px' }}>/{plan.period}</span>
                 </div>
-                <p className={'text-xs mb-5 ' + (plan.featured ? 'text-sky-200' : 'text-slate-400')}>{plan.description}</p>
-                <ul className="space-y-2.5 mb-6">
+                <p style={{ fontSize: '12px', color: subColor, marginBottom: '20px' }}>{plan.description}</p>
+
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm">
-                      <Check size={15} className={plan.featured ? 'text-sky-200 flex-shrink-0' : 'text-green-500 flex-shrink-0'} />
-                      <span className={plan.featured ? 'text-sky-100' : 'text-slate-600'}>{feature}</span>
+                    <li key={feature} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <Check size={15} color={checkColor} style={{ flexShrink: 0 }} />
+                      <span style={{ color: featureColor }}>{feature}</span>
                     </li>
                   ))}
                 </ul>
+
                 <button
                   onClick={() => handleSelectPlan(plan.id)}
                   disabled={loading || isActive}
-                  className={'w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 ' + (
-                    plan.featured
-                      ? 'bg-white text-sky-600 hover:bg-sky-50'
-                      : 'bg-sky-600 text-white hover:bg-sky-700'
-                  )}
+                  style={{
+                    width: '100%',
+                    backgroundColor: plan.bg,
+                    color: plan.color,
+                    fontWeight: 'bold',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: plan.featured ? 'none' : '2px solid #0284c7',
+                    cursor: loading || isActive ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity: loading || isActive ? 0.6 : 1,
+                    transition: 'opacity 0.2s',
+                  }}
                 >
-                  {loading && selectedPlan === plan.id ? <Loader size={16} className="animate-spin" /> : null}
+                  {loading && selectedPlan === plan.id ? <Loader size={16} /> : null}
                   {isActive ? 'Deja abonne' : 'Choisir ce plan'}
                 </button>
               </div>
@@ -193,11 +245,11 @@ export default function InstructorSubscriptionPage() {
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md mx-auto">
-          <div className="text-center mb-6">
-            <Crown size={32} className="text-sky-600 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-slate-800">Finaliser votre abonnement</h3>
-            <p className="text-slate-500 text-sm mt-1">
+        <div style={{ backgroundColor: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', maxWidth: '420px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <Crown size={32} color="#0284c7" style={{ margin: '0 auto 12px' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>Finaliser votre abonnement</h3>
+            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
               Plan {paymentData.planName} — {formatPrice(paymentData.amount, paymentData.currency)}
             </p>
           </div>
@@ -222,24 +274,24 @@ export default function InstructorSubscriptionPage() {
           </FeexPayProvider>
           <button
             onClick={() => { setPaymentData(null); setSelectedPlan(null) }}
-            className="w-full mt-4 text-sm text-slate-400 hover:text-slate-600 py-2 transition-colors"
+            style={{ width: '100%', marginTop: '12px', fontSize: '13px', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
           >
             Annuler
           </button>
         </div>
       )}
 
-      <div className="bg-slate-50 rounded-2xl p-6">
-        <h3 className="font-semibold text-slate-800 mb-4">Questions frequentes</h3>
-        <div className="space-y-3">
+      <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '24px' }}>
+        <h3 style={{ fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>Questions frequentes</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {[
             { q: 'Puis-je annuler a tout moment ?', a: 'Oui, vous pouvez annuler votre abonnement a tout moment depuis votre espace formateur.' },
             { q: 'Quels moyens de paiement acceptez-vous ?', a: 'Nous acceptons MTN Mobile Money, Moov Money, Wave et Orange Money via Feexpay.' },
             { q: 'Que se passe-t-il si je ne renouvelle pas ?', a: 'Votre compte passe en plan gratuit. Vos formations et eleves restent accessibles.' },
           ].map((faq) => (
-            <div key={faq.q} className="bg-white rounded-xl p-4 border border-slate-200">
-              <p className="text-sm font-medium text-slate-800 mb-1">{faq.q}</p>
-              <p className="text-xs text-slate-500">{faq.a}</p>
+            <div key={faq.q} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0' }}>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b', marginBottom: '4px' }}>{faq.q}</p>
+              <p style={{ fontSize: '12px', color: '#64748b' }}>{faq.a}</p>
             </div>
           ))}
         </div>
