@@ -44,6 +44,8 @@ export default function InstructorSettingsPage() {
   const [customDomain, setCustomDomain] = useState('')
   const [logoUploading, setLogoUploading] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
+  const [domainVerified, setDomainVerified] = useState(false)
+  const [savedDomain, setSavedDomain] = useState('')
 
   useEffect(() => {
     const fetchInstructor = async () => {
@@ -59,6 +61,8 @@ export default function InstructorSettingsPage() {
           setLogo(data.branding.logo || null)
           setCoverImage(data.branding.coverImage || null)
           setCustomDomain(data.customDomain || '')
+          setSavedDomain(data.customDomain || '')
+          setDomainVerified((data as any).domainVerified || false)
         }
       } catch (error) {
         console.error(error)
@@ -105,13 +109,85 @@ export default function InstructorSettingsPage() {
       const slug = instructor?.slug || slugify(displayName)
       await setDocument('instructors', userProfile.id, {
         slug,
-        customDomain: customDomain.trim() || null,
         branding: { displayName, bio, primaryColor, secondaryColor, logo, coverImage, favicon: logo },
       })
       toast.success('Parametres sauvegardes !')
       await refreshProfile()
     } catch {
       toast.error('Erreur lors de la sauvegarde')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleConnectDomain = async () => {
+    if (!customDomain.trim()) {
+      toast.error('Entrez un nom de domaine')
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/domains', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ customDomain: customDomain.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Erreur lors de la connexion')
+        return
+      }
+      setSavedDomain(customDomain.trim())
+      setDomainVerified(data.verified || false)
+      toast.success(data.message)
+      if (!data.verified) {
+        setTimeout(() => checkDomainStatus(), 5000)
+      }
+    } catch {
+      toast.error('Erreur reseau')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const checkDomainStatus = async () => {
+    if (!savedDomain) return
+    try {
+      const res = await fetch(
+        '/api/domains?domain=' + savedDomain + '&checkStatus=true',
+        { credentials: 'include' }
+      )
+      const data = await res.json()
+      if (data.verified) {
+        setDomainVerified(true)
+        toast.success('Domaine verifie et actif !')
+      } else {
+        toast('DNS en cours de propagation...', { icon: '⏳' })
+      }
+    } catch {
+      console.error('Erreur verification domaine')
+    }
+  }
+
+  const handleRemoveDomain = async () => {
+    if (!confirm('Supprimer ce domaine personnalise ?')) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/domains', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ customDomain: savedDomain }),
+      })
+      if (res.ok) {
+        setCustomDomain('')
+        setSavedDomain('')
+        setDomainVerified(false)
+        toast.success('Domaine supprime')
+      }
+    } catch {
+      toast.error('Erreur lors de la suppression')
     } finally {
       setSaving(false)
     }
@@ -318,7 +394,7 @@ export default function InstructorSettingsPage() {
       {activeTab === 'domain' && (
         <div className="space-y-5">
 
-          {/* Sous-domaine gratuit inclus */}
+          {/* Sous-domaine gratuit */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
             <h2 className="font-semibold text-slate-800 mb-1">Votre sous-domaine gratuit</h2>
             <p className="text-slate-500 text-sm mb-4">
@@ -334,25 +410,25 @@ export default function InstructorSettingsPage() {
           </div>
 
           {/* Domaine personnalise */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6">
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
             <h2 className="font-semibold text-slate-800 mb-1">Domaine personnalise</h2>
-            <p className="text-slate-500 text-sm mb-4">
-              Connectez votre propre domaine acheté chez un registrar
+            <p className="text-slate-500 text-sm">
+              Connectez votre propre domaine achete chez un registrar
             </p>
 
-            {/* Achat domaine */}
-            <div className="mb-4">
+            {/* Liens achat domaine */}
+            <div>
               <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">
                 Acheter un nom de domaine chez :
               </p>
               <div className="flex flex-wrap gap-2">
                 {DOMAIN_PROVIDERS.map((provider) => (
-                  
+                  <a
                     key={provider.name}
                     href={provider.url}
                     target="_blank"
                     rel="noreferrer"
-                    className={'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 ' + provider.color}
+                    className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 ${provider.color}`}
                   >
                     {provider.name}
                     <ExternalLink size={11} />
@@ -361,33 +437,74 @@ export default function InstructorSettingsPage() {
               </div>
             </div>
 
+            {/* Domaine actuel connecte */}
+            {savedDomain && (
+              <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${domainVerified ? 'bg-green-500' : 'bg-orange-400 animate-pulse'}`} />
+                  <span className="text-sm font-mono text-slate-700">{savedDomain}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${domainVerified ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
+                    {domainVerified ? 'Actif' : 'En attente DNS'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {!domainVerified && (
+                    <button
+                      onClick={checkDomainStatus}
+                      className="text-xs text-sky-600 hover:underline font-medium"
+                    >
+                      Verifier
+                    </button>
+                  )}
+                  <button
+                    onClick={handleRemoveDomain}
+                    className="text-xs text-red-400 hover:text-red-600 hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Champ + bouton connecter */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Votre domaine personnalise
+                {savedDomain ? 'Changer de domaine' : 'Votre domaine personnalise'}
               </label>
-              <input
-                value={customDomain}
-                onChange={(e) => setCustomDomain(e.target.value.toLowerCase().trim())}
-                placeholder="formations.votresite.com"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value.toLowerCase().trim())}
+                  placeholder="formations.votresite.com"
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
+                />
+                <button
+                  onClick={handleConnectDomain}
+                  disabled={saving || !customDomain.trim() || customDomain.trim() === savedDomain}
+                  className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50 flex-shrink-0"
+                >
+                  {saving ? (
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    'Connecter'
+                  )}
+                </button>
+              </div>
               <p className="text-xs text-slate-400 mt-1">
                 Exemple : formations.monsiteweb.com ou cours.monentreprise.com
               </p>
             </div>
 
             {/* Instructions DNS */}
-            {customDomain && (
-              <div className="mt-4 bg-slate-50 rounded-xl p-4 space-y-3">
+            {customDomain && customDomain !== savedDomain && (
+              <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                 <p className="text-sm font-medium text-slate-700">
-                  Configuration DNS a faire chez votre registrar
+                  Apres avoir clique Connecter, configurez le DNS chez votre registrar
                 </p>
                 <p className="text-xs text-slate-500">
-                  Connectez-vous a votre compte Hostinger, OVH, LWS ou autre et ajoutez ces enregistrements dans la gestion DNS de votre domaine :
+                  Connectez-vous a votre compte Hostinger, OVH, LWS ou autre et ajoutez ces enregistrements :
                 </p>
-
                 <div className="space-y-2">
-                  {/* CNAME */}
                   <div className="bg-white rounded-lg p-3 border border-slate-200">
                     <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
                       Enregistrement CNAME
@@ -403,8 +520,6 @@ export default function InstructorSettingsPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* TXT */}
                   <div className="bg-white rounded-lg p-3 border border-slate-200">
                     <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
                       Enregistrement TXT (verification)
@@ -421,7 +536,6 @@ export default function InstructorSettingsPage() {
                     </div>
                   </div>
                 </div>
-
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
                   La propagation DNS peut prendre de 30 minutes a 48h selon votre registrar.
                 </p>
@@ -429,35 +543,35 @@ export default function InstructorSettingsPage() {
             )}
           </div>
 
-          {/* Etapes Vercel */}
+          {/* Aide Vercel */}
           <div className="bg-sky-50 border border-sky-200 rounded-2xl p-5">
             <h3 className="font-semibold text-sky-800 mb-3 text-sm flex items-center gap-2">
               <Globe size={15} />
-              Apres avoir configure le DNS, activez le domaine sur Vercel
+              Comment ca fonctionne
             </h3>
             <ol className="space-y-2 text-xs text-sky-700">
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span>
-                Sauvegardez d'abord votre domaine ci-dessus
+                Achetez un domaine chez Hostinger, OVH, LWS ou GoDaddy
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span>
-                Allez sur vercel.com et connectez-vous
+                Entrez votre domaine ci-dessus et cliquez Connecter
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span>
-                Ouvrez votre projet lfdweblearn → Settings → Domains
+                Configurez le CNAME chez votre registrar comme indique
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span>
-                Cliquez "Add Domain" et entrez votre domaine exact
+                Attendez la propagation DNS (30min a 48h) puis cliquez Verifier
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">5</span>
-                Vercel verifiera automatiquement le DNS configure chez votre registrar
+                Votre domaine est actif et pointe vers votre page de formations
               </li>
             </ol>
-            
+            <a
               href="https://vercel.com/docs/projects/domains/add-a-domain"
               target="_blank"
               rel="noreferrer"
