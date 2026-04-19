@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import InstructorSidebar from '@/components/layout/InstructorSidebar'
 import InstructorHeader from '@/components/layout/InstructorHeader'
-import { Menu, X } from 'lucide-react'
+import { Menu } from 'lucide-react'
 
 export default function InstructorLayout({ children }: { children: React.ReactNode }) {
   const { userProfile, loading, isAuthenticated } = useAuth()
@@ -31,7 +31,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
 
-      {/* Overlay mobile */}
+      {/* Overlay mobile — cliquable pour fermer */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -39,18 +39,22 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         />
       )}
 
-      {/* Sidebar — cachee sur mobile, visible sur desktop */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:flex lg:flex-shrink-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <InstructorSidebar onClose={() => setSidebarOpen(false)} />
+      {/* Sidebar desktop — toujours visible */}
+      <div className="hidden lg:flex flex-shrink-0">
+        <InstructorSidebar />
       </div>
+
+      {/* Sidebar mobile — visible seulement si sidebarOpen */}
+      {sidebarOpen && (
+        <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
+          <InstructorSidebar onClose={() => setSidebarOpen(false)} />
+        </div>
+      )}
 
       {/* Contenu principal */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-        {/* Bouton hamburger mobile dans le header */}
+        {/* Barre mobile avec hamburger */}
         <div className="flex items-center lg:hidden bg-white border-b border-slate-100 px-4 h-14 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
