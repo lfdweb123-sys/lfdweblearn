@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import PaymentButton from '@/components/payment/PaymentButton'
 
 export default function CoursesClient({ courses }: { courses: Course[] }) {
-  const { isAuthenticated, firebaseUser } = useAuth()
+  const { isAuthenticated } = useAuth()
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -88,7 +88,6 @@ export default function CoursesClient({ courses }: { courses: Course[] }) {
                     </span>
                   </div>
 
-                  {/* Bouton selon état connexion et prix */}
                   {!isAuthenticated ? (
                     <Link
                       href={'/login?redirect=/courses'}
@@ -99,13 +98,7 @@ export default function CoursesClient({ courses }: { courses: Course[] }) {
                   ) : course.price === 0 ? (
                     <EnrollFreeButton courseId={course.id!} />
                   ) : (
-                    <PaymentButton
-                      courseId={course.id!}
-                      amount={course.price}
-                      currency={course.currency || 'XOF'}
-                      userId={firebaseUser!.uid}
-                      courseTitle={course.title}
-                    />
+                    <PaymentButton course={course} />
                   )}
                 </div>
               </div>
@@ -117,7 +110,6 @@ export default function CoursesClient({ courses }: { courses: Course[] }) {
   )
 }
 
-// ── Bouton inscription gratuite ──────────────────────────
 function EnrollFreeButton({ courseId }: { courseId: string }) {
   const handleEnroll = async () => {
     try {
