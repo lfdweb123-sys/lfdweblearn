@@ -12,6 +12,7 @@ import {
   Users,
   BarChart3,
   LogOut,
+  Crown,
 } from 'lucide-react'
 import { logout } from '@/lib/firebase/auth'
 import { useRouter } from 'next/navigation'
@@ -43,6 +44,9 @@ const navItems = [
     href: '/instructor/stats',
     icon: BarChart3,
   },
+  { label: 'Abonnement Pro',
+    href: '/instructor/subscription', 
+    icon: Crown },
   {
     label: 'Paramètres',
     href: '/instructor/settings',
