@@ -3,13 +3,33 @@
 
 import { Bell, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useEffect, useState } from 'react'
+import { getDocument } from '@/lib/firebase/firestore'
+import type { Instructor } from '@/types'
 import Link from 'next/link'
 
 export default function InstructorHeader() {
   const { userProfile } = useAuth()
+  const [instructor, setInstructor] = useState<Instructor | null>(null)
+
+  useEffect(() => {
+    const fetchInstructor = async () => {
+      if (!userProfile?.id) return
+      try {
+        const data = await getDocument<Instructor>('instructors', userProfile.id)
+        setInstructor(data)
+      } catch {}
+    }
+    fetchInstructor()
+  }, [userProfile?.id])
+
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'lfdweblearn.com'
+  const publicPageUrl = instructor?.slug
+    ? 'https://' + instructor.slug + '.' + rootDomain
+    : '/instructor/settings'
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-10">
+    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 flex-shrink-0">
       <div>
         <h2 className="text-sm font-medium text-slate-800">
           Bonjour, {userProfile?.displayName?.split(' ')[0] || 'Formateur'} 👋
@@ -26,8 +46,9 @@ export default function InstructorHeader() {
       <div className="flex items-center gap-3">
         {/* Voir ma page publique */}
         <Link
-          href={`/`}
+          href={publicPageUrl}
           target="_blank"
+          rel="noreferrer"
           className="flex items-center gap-2 text-xs text-slate-500 hover:text-sky-600 border border-slate-200 rounded-lg px-3 py-2 transition-all"
         >
           <ExternalLink size={14} />
