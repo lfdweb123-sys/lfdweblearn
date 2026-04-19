@@ -50,25 +50,37 @@ export async function loginWithEmail(
 // ── Google ───────────────────────────────────────────────────
 export async function loginWithGoogle(): Promise<FirebaseUser> {
   const provider = new GoogleAuthProvider()
-  const credential = await signInWithPopup(auth, provider)
-  const user = credential.user
+  provider.setCustomParameters({ prompt: 'select_account' })
 
-  // Créer le doc si premier login Google
-  const userRef = doc(db, 'users', user.uid)
-  const userSnap = await getDoc(userRef)
+  try {
+    const credential = await signInWithPopup(auth, provider)
+    const user = credential.user
 
-  if (!userSnap.exists()) {
-    await setDoc(userRef, {
-      email: user.email,
-      displayName: user.displayName,
-      role: 'student',
-      photoURL: user.photoURL,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
+    const userRef = doc(db, 'users', user.uid)
+    const userSnap = await getDoc(userRef)
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: user.email,
+        displayName: user.displayName,
+        role: 'student',
+        photoURL: user.photoURL,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+
+    return user
+  } catch (error: unknown) {
+    const err = error as { code?: string }
+    if (err.code === 'auth/popup-blocked') {
+      throw new Error('Popup bloquée. Autorisez les popups pour ce site.')
+    }
+    if (err.code === 'auth/popup-closed-by-user') {
+      throw new Error('Connexion annulée.')
+    }
+    throw error
   }
-
-  return user
 }
 
 // ── Déconnexion ──────────────────────────────────────────────
