@@ -1,4 +1,4 @@
-// components/payment/PaymentButton.tsx
+﻿// components/payment/PaymentButton.tsx
 'use client'
 
 import { useState } from 'react'
@@ -17,7 +17,15 @@ const FeexPayProvider = dynamic(
 )
 const FeexPayButton = dynamic(
   () => import('@feexpay/react-sdk').then((m) => m.FeexPayButton),
-  { ssr: false }
+  { ssr: false, loading: () => (
+    <button
+      disabled
+      className="w-full flex items-center justify-center gap-2 bg-sky-600 text-white font-bold py-3 px-4 rounded-xl"
+    >
+      <Loader size={18} className="animate-spin" />
+      Chargement...
+    </button>
+  )}
 )
 
 interface PaymentButtonProps {
@@ -115,45 +123,60 @@ export default function PaymentButton({ course, onSuccess }: PaymentButtonProps)
         <button
           onClick={handleInitiate}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-2xl transition-all disabled:opacity-50 text-lg shadow-lg shadow-orange-200"
+          className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-orange-200"
         >
           {loading ? (
-            <Loader size={22} className="animate-spin" />
+            <Loader size={18} className="animate-spin" />
           ) : (
             <>
-              <ShoppingCart size={22} />
-              Acheter - {formatPrice(course.price, course.currency)}
+              <ShoppingCart size={18} />
+              Acheter · {formatPrice(course.price, course.currency)}
             </>
           )}
         </button>
       ) : paymentData ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm text-slate-500 text-center mb-4">
+          <p className="text-sm text-slate-500 text-center mb-3">
             Finalisez votre paiement Mobile Money
           </p>
           <FeexPayProvider>
-            <FeexPayButton
-              amount={paymentData.amount}
-              description={'Formation: ' + paymentData.courseTitle}
-              token={process.env.NEXT_PUBLIC_FEEXPAY_API_KEY || ''}
-              id={paymentData.shopId}
-              customId={paymentData.customId}
-              callback_info={{
-                email: paymentData.userEmail,
-                fullname: paymentData.userFullname,
-                courseId: course.id,
-              }}
-              mode="LIVE"
-              case="MOBILE"
-              currency={paymentData.currency as 'XOF' | 'XAF'}
-              callback={handleCallback}
-              buttonText={'Payer ' + formatPrice(paymentData.amount, paymentData.currency)}
-              buttonClass="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl transition-all"
-            />
+            <div style={{ width: '100%' }}>
+              <FeexPayButton
+                amount={paymentData.amount}
+                description={'Formation: ' + paymentData.courseTitle}
+                token={process.env.NEXT_PUBLIC_FEEXPAY_API_KEY || ''}
+                id={paymentData.shopId}
+                customId={paymentData.customId}
+                callback_info={{
+                  email: paymentData.userEmail,
+                  fullname: paymentData.userFullname,
+                  courseId: course.id,
+                }}
+                mode="LIVE"
+                case="MOBILE"
+                currency={paymentData.currency as 'XOF' | 'XAF'}
+                callback={handleCallback}
+                buttonText={'Payer ' + formatPrice(paymentData.amount, paymentData.currency)}
+                buttonStyle={{
+                  width: '100%',
+                  backgroundColor: '#0284c7',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              />
+            </div>
           </FeexPayProvider>
           <button
             onClick={() => setShowPayment(false)}
-            className="w-full mt-3 text-sm text-slate-400 hover:text-slate-600 transition-colors"
+            className="w-full mt-3 text-sm text-slate-400 hover:text-slate-600 transition-colors py-2"
           >
             Annuler
           </button>
@@ -209,9 +232,9 @@ function EnrollFreeButton({ course, onSuccess }: { course: Course; onSuccess?: (
     <button
       onClick={handleEnroll}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-2xl transition-all disabled:opacity-50 text-lg"
+      className="w-full flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-50"
     >
-      {loading ? <Loader size={22} className="animate-spin" /> : "S'inscrire gratuitement"}
+      {loading ? <Loader size={18} className="animate-spin" /> : "S'inscrire gratuitement"}
     </button>
   )
 }
