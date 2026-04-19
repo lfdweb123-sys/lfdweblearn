@@ -24,7 +24,11 @@ export default function InstructorHeader() {
   }, [userProfile?.id])
 
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'lfdweblearn.com'
-  const publicPageUrl = instructor?.slug
+
+  // Prioriser domaine perso si connecté, sinon sous-domaine par défaut
+  const publicPageUrl = (instructor as any)?.domainVerified && instructor?.customDomain
+    ? 'https://' + instructor.customDomain
+    : instructor?.slug
     ? 'https://' + instructor.slug + '.' + rootDomain
     : '/instructor/settings'
 
@@ -44,7 +48,6 @@ export default function InstructorHeader() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Voir ma page publique */}
         <Link
           href={publicPageUrl}
           target="_blank"
@@ -55,13 +58,11 @@ export default function InstructorHeader() {
           Ma page
         </Link>
 
-        {/* Notifications */}
         <button className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-all">
           <Bell size={16} className="text-slate-500" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
         </button>
 
-        {/* Avatar */}
         <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600 font-semibold text-sm">
           {userProfile?.displayName?.charAt(0).toUpperCase() || 'F'}
         </div>
