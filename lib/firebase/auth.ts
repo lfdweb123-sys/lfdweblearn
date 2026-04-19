@@ -25,12 +25,12 @@ export async function registerWithEmail(
 
   await updateProfile(user, { displayName })
 
-  // Créer le document utilisateur dans Firestore
   await setDoc(doc(db, 'users', user.uid), {
     email: user.email,
     displayName,
     role: 'student',
     photoURL: null,
+    disabled: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
@@ -38,13 +38,22 @@ export async function registerWithEmail(
   return user
 }
 
-// ── Connexion ────────────────────────────────────────────────
+// ── Connexion email ──────────────────────────────────────────
 export async function loginWithEmail(
   email: string,
   password: string
 ): Promise<FirebaseUser> {
   const credential = await signInWithEmailAndPassword(auth, email, password)
-  return credential.user
+  const user = credential.user
+
+  // Verifier si le compte est desactive avant de continuer
+  const userSnap = await getDoc(doc(db, 'users', user.uid))
+  if (userSnap.exists() && userSnap.data()?.disabled === true) {
+    await signOut(auth)
+    throw new Error('ACCOUNT_DISABLED')
+  }
+
+  return user
 }
 
 // ── Google ───────────────────────────────────────────────────
@@ -65,25 +74,31 @@ export async function loginWithGoogle(): Promise<FirebaseUser> {
         displayName: user.displayName,
         role: 'student',
         photoURL: user.photoURL,
+        disabled: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
+    } else if (userSnap.data()?.disabled === true) {
+      // Compte desactive — deconnecter immediatement
+      await signOut(auth)
+      throw new Error('ACCOUNT_DISABLED')
     }
 
     return user
   } catch (error: unknown) {
-    const err = error as { code?: string }
+    const err = error as { code?: string; message?: string }
+    if (err.message === 'ACCOUNT_DISABLED') throw error
     if (err.code === 'auth/popup-blocked') {
-      throw new Error('Popup bloquée. Autorisez les popups pour ce site.')
+      throw new Error('Popup bloquee. Autorisez les popups pour ce site.')
     }
     if (err.code === 'auth/popup-closed-by-user') {
-      throw new Error('Connexion annulée.')
+      throw new Error('Connexion annulee.')
     }
     throw error
   }
 }
 
-// ── Déconnexion ──────────────────────────────────────────────
+// ── Deconnexion ──────────────────────────────────────────────
 export async function logout(): Promise<void> {
   await signOut(auth)
 }
@@ -93,7 +108,7 @@ export async function resetPassword(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email)
 }
 
-// ── Récupérer profil Firestore ───────────────────────────────
+// ── Recuperer profil Firestore ───────────────────────────────
 export async function getUserProfile(uid: string): Promise<User | null> {
   const snap = await getDoc(doc(db, 'users', uid))
   if (!snap.exists()) return null

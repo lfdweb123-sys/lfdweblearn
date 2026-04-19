@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Minimum 6 caractères'),
+  password: z.string().min(6, 'Minimum 6 caracteres'),
 })
 
 type LoginForm = z.infer<typeof loginSchema>
@@ -35,12 +35,13 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await loginWithEmail(data.email, data.password)
-      toast.success('Connexion réussie !')
+      toast.success('Connexion reussie !')
       router.push(redirect)
     } catch (error: unknown) {
-      const msg =
-        error instanceof Error ? error.message : 'Erreur de connexion'
-      if (msg.includes('user-not-found') || msg.includes('wrong-password')) {
+      const msg = error instanceof Error ? error.message : ''
+      if (msg === 'ACCOUNT_DISABLED') {
+        toast.error('Votre compte a ete desactive. Contactez le support : contact@lfdweblearn.com')
+      } else if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
         toast.error('Email ou mot de passe incorrect')
       } else {
         toast.error('Une erreur est survenue')
@@ -54,39 +55,39 @@ export default function LoginPage() {
     setGoogleLoading(true)
     try {
       await loginWithGoogle()
-      toast.success('Connexion réussie !')
+      toast.success('Connexion reussie !')
       router.push(redirect)
-    } catch {
-      toast.error('Connexion Google échouée')
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : ''
+      if (msg === 'ACCOUNT_DISABLED') {
+        toast.error('Votre compte a ete desactive. Contactez le support : contact@lfdweblearn.com')
+      } else {
+        toast.error('Connexion Google echouee')
+      }
     } finally {
       setGoogleLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white dark:from-slate-900 dark:to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
             <span className="text-3xl font-bold text-sky-600">LFD</span>
             <span className="text-3xl font-bold text-orange-500"> Web Learn</span>
           </Link>
-          <p className="mt-2 text-slate-500 text-sm">
-            Connectez-vous à votre espace
-          </p>
+          <p className="mt-2 text-slate-500 text-sm">Connectez-vous a votre espace</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-          <h1 className="text-2xl font-bold text-slate-800 mb-6">Connexion</h1>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-700">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Connexion</h1>
 
-          {/* Google */}
           <button
             onClick={handleGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-xl py-3 px-4 text-slate-700 font-medium hover:bg-slate-50 transition-all mb-6 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-600 rounded-xl py-3 px-4 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-all mb-6 disabled:opacity-50"
           >
             {googleLoading ? (
               <span className="animate-spin h-5 w-5 border-2 border-slate-400 border-t-transparent rounded-full" />
@@ -102,43 +103,32 @@ export default function LoginPage() {
           </button>
 
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-600" />
             <span className="text-slate-400 text-sm">ou</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-600" />
           </div>
 
-          {/* Formulaire */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
               <input
                 {...register('email')}
                 type="email"
                 placeholder="vous@exemple.com"
                 className={cn(
-                  'w-full px-4 py-3 rounded-xl border text-slate-800 placeholder-slate-400',
-                  'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent',
-                  'transition-all',
-                  errors.email ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                  'w-full px-4 py-3 rounded-xl border text-slate-800 dark:text-white dark:bg-slate-700 placeholder-slate-400',
+                  'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all',
+                  errors.email ? 'border-red-400 bg-red-50' : 'border-slate-200 dark:border-slate-600'
                 )}
               />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium text-slate-700">
-                  Mot de passe
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-sky-600 hover:underline"
-                >
-                  Mot de passe oublié ?
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Mot de passe</label>
+                <Link href="/forgot-password" className="text-xs text-sky-600 hover:underline">
+                  Mot de passe oublie ?
                 </Link>
               </div>
               <input
@@ -146,15 +136,12 @@ export default function LoginPage() {
                 type="password"
                 placeholder="••••••••"
                 className={cn(
-                  'w-full px-4 py-3 rounded-xl border text-slate-800 placeholder-slate-400',
-                  'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent',
-                  'transition-all',
-                  errors.password ? 'border-red-400 bg-red-50' : 'border-slate-200'
+                  'w-full px-4 py-3 rounded-xl border text-slate-800 dark:text-white dark:bg-slate-700 placeholder-slate-400',
+                  'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all',
+                  errors.password ? 'border-red-400 bg-red-50' : 'border-slate-200 dark:border-slate-600'
                 )}
               />
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
             <button
@@ -164,17 +151,13 @@ export default function LoginPage() {
             >
               {loading ? (
                 <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-              ) : (
-                'Se connecter'
-              )}
+              ) : 'Se connecter'}
             </button>
           </form>
 
-          <p className="text-center text-slate-500 text-sm mt-6">
+          <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-6">
             Pas encore de compte ?{' '}
-            <Link href="/register" className="text-sky-600 font-medium hover:underline">
-              Créer un compte
-            </Link>
+            <Link href="/register" className="text-sky-600 font-medium hover:underline">Creer un compte</Link>
           </p>
         </div>
       </div>
