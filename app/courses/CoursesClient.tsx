@@ -1,4 +1,4 @@
-// app/courses/CoursesClient.tsx
+﻿// app/courses/CoursesClient.tsx
 'use client'
 
 import MainHeader from '@/components/layout/MainHeader'
