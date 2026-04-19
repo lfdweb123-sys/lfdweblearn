@@ -14,7 +14,7 @@ import toast from 'react-hot-toast'
 import {
   BookOpen, CheckCircle, Lock, Play,
   TrendingUp, User, LogOut, Settings,
-  ChevronRight, Plus, Award
+  ChevronRight, Plus, Award, Shield
 } from 'lucide-react'
 
 interface EnrolledCourse extends Enrollment {
@@ -113,22 +113,39 @@ export default function DashboardPage() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Badge role */}
-            <span className={`hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full ${
-              userProfile?.role === 'instructor'
-                ? 'bg-sky-50 text-sky-700'
-                : userProfile?.role === 'admin'
-                ? 'bg-red-50 text-red-700'
-                : 'bg-slate-100 text-slate-600'
-            }`}>
-              <User size={12} />
-              {userProfile?.role === 'instructor'
-                ? 'Formateur'
-                : userProfile?.role === 'admin'
-                ? 'Admin'
-                : 'Eleve'}
-            </span>
 
+            {/* Badge role — cliquable selon le role */}
+            {userProfile?.role === 'admin' ? (
+              <Link
+                href="/admin"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-red-50 text-red-700 hover:bg-red-100 transition-all"
+              >
+                <Shield size={12} />
+                Admin
+              </Link>
+            ) : userProfile?.role === 'instructor' ? (
+              <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-sky-50 text-sky-700">
+                <User size={12} />
+                Formateur
+              </span>
+            ) : (
+              <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-600">
+                <User size={12} />
+                Eleve
+              </span>
+            )}
+
+            {/* Lien admin mobile */}
+            {userProfile?.role === 'admin' && (
+              <Link
+                href="/admin"
+                className="sm:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 transition-all"
+              >
+                <Shield size={16} className="text-red-600" />
+              </Link>
+            )}
+
+            {/* Espace formateur desktop */}
             {isInstructor && (
               <Link
                 href="/instructor"
@@ -202,7 +219,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-slate-500">{stat.label}</span>
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.color}`}>
+                  <div className={'w-9 h-9 rounded-xl flex items-center justify-center ' + stat.color}>
                     <Icon size={18} />
                   </div>
                 </div>
