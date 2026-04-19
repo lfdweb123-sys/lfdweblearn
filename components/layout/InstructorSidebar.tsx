@@ -18,9 +18,7 @@ export default function InstructorHeader() {
       try {
         const data = await getDocument<Instructor>('instructors', userProfile.id)
         setInstructor(data)
-      } catch {
-        // pas encore de profil formateur
-      }
+      } catch {}
     }
     fetchInstructor()
   }, [userProfile?.id])
@@ -31,7 +29,7 @@ export default function InstructorHeader() {
     : '/instructor/settings'
 
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 sticky top-0 z-10">
+    <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 flex-shrink-0">
       <div>
         <h2 className="text-sm font-medium text-slate-800">
           Bonjour, {userProfile?.displayName?.split(' ')[0] || 'Formateur'} 👋
