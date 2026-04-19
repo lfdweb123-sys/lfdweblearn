@@ -6,8 +6,12 @@ import Link from 'next/link'
 import { BookOpen, Play, Globe, Clock, ArrowLeft } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { Course } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
+import PaymentButton from '@/components/payment/PaymentButton'
 
 export default function CoursesClient({ courses }: { courses: Course[] }) {
+  const { isAuthenticated, firebaseUser } = useAuth()
+
   return (
     <div className="min-h-screen bg-slate-50">
       <MainHeader />
@@ -60,6 +64,7 @@ export default function CoursesClient({ courses }: { courses: Course[] }) {
                     </span>
                   </div>
                 </div>
+
                 <div className="p-5">
                   <h3 className="font-semibold text-slate-800 mb-1.5 line-clamp-2">
                     {course.title}
@@ -82,12 +87,26 @@ export default function CoursesClient({ courses }: { courses: Course[] }) {
                       )}
                     </span>
                   </div>
-                  <Link
-                    href="/register"
-                    className="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-all"
-                  >
-                    {course.price === 0 ? "S'inscrire gratuitement" : 'Acheter la formation'}
-                  </Link>
+
+                  {/* Bouton selon état connexion et prix */}
+                  {!isAuthenticated ? (
+                    <Link
+                      href={'/login?redirect=/courses'}
+                      className="block w-full text-center bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-all"
+                    >
+                      {course.price === 0 ? "S'inscrire gratuitement" : 'Se connecter pour acheter'}
+                    </Link>
+                  ) : course.price === 0 ? (
+                    <EnrollFreeButton courseId={course.id!} />
+                  ) : (
+                    <PaymentButton
+                      courseId={course.id!}
+                      amount={course.price}
+                      currency={course.currency || 'XOF'}
+                      userId={firebaseUser!.uid}
+                      courseTitle={course.title}
+                    />
+                  )}
                 </div>
               </div>
             ))}
@@ -95,5 +114,33 @@ export default function CoursesClient({ courses }: { courses: Course[] }) {
         )}
       </main>
     </div>
+  )
+}
+
+// ── Bouton inscription gratuite ──────────────────────────
+function EnrollFreeButton({ courseId }: { courseId: string }) {
+  const handleEnroll = async () => {
+    try {
+      const res = await fetch('/api/enrollments/free', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ courseId }),
+      })
+      if (res.ok) {
+        window.location.href = '/dashboard'
+      }
+    } catch {
+      console.error('Erreur inscription')
+    }
+  }
+
+  return (
+    <button
+      onClick={handleEnroll}
+      className="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-all"
+    >
+      S'inscrire gratuitement
+    </button>
   )
 }
