@@ -187,13 +187,13 @@ export default async function InstructorPublicPage({ params }: Props) {
                         Certificat inclus
                       </span>
                     </div>
-                    
+                    <Link
                       href={ROOT + '/courses?course=' + course.id + '&instructor=' + slug}
                       className="block w-full text-center text-white font-semibold py-3 rounded-xl text-sm transition-all hover:opacity-90 active:scale-95"
                       style={{ backgroundColor: primary }}
                     >
                       {course.price === 0 ? "S'inscrire gratuitement" : 'Acheter - ' + formatPrice(course.price, course.currency)}
-                    </a>
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -217,13 +217,13 @@ export default async function InstructorPublicPage({ params }: Props) {
               </span>
             </div>
             <p className="text-slate-400 text-xs">Plateforme de formation en ligne pour l Afrique</p>
-            
+            <Link
               href={ROOT}
               className="text-xs font-medium hover:underline"
               style={{ color: primary }}
             >
               Creer ma formation →
-            </a>
+            </Link>
           </div>
         </footer>
       </div>
