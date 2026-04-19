@@ -192,7 +192,7 @@ export default async function InstructorPublicPage({ params }: Props) {
                       className="block w-full text-center text-white font-semibold py-3 rounded-xl text-sm transition-all hover:opacity-90 active:scale-95"
                       style={{ backgroundColor: primary }}
                     >
-                      {course.price === 0 ? "S'inscrire gratuitement" : 'Acheter · ' + formatPrice(course.price, course.currency)}
+                      {course.price === 0 ? "S'inscrire gratuitement" : 'Acheter - ' + formatPrice(course.price, course.currency)}
                     </a>
                   </div>
                 </div>
