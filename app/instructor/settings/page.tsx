@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 import {
   Palette, Globe, Upload, Save,
-  Eye, Link2, Image as ImageIcon, X
+  Eye, Link2, Image as ImageIcon, X, ExternalLink
 } from 'lucide-react'
 
 const PRESET_COLORS = [
@@ -20,6 +20,13 @@ const PRESET_COLORS = [
   { primary: '#dc2626', secondary: '#1d4ed8', label: 'Rouge et Bleu' },
   { primary: '#0f172a', secondary: '#f97316', label: 'Sombre et Orange' },
   { primary: '#0891b2', secondary: '#84cc16', label: 'Cyan et Vert' },
+]
+
+const DOMAIN_PROVIDERS = [
+  { name: 'Hostinger', url: 'https://www.hostinger.fr/enregistrement-nom-de-domaine', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { name: 'OVH', url: 'https://www.ovh.com/fr/domaines/', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { name: 'LWS', url: 'https://www.lws.fr/nom-de-domaine.php', color: 'bg-green-50 text-green-700 border-green-200' },
+  { name: 'GoDaddy', url: 'https://fr.godaddy.com/domains', color: 'bg-orange-50 text-orange-700 border-orange-200' },
 ]
 
 export default function InstructorSettingsPage() {
@@ -169,6 +176,7 @@ export default function InstructorSettingsPage() {
         ))}
       </div>
 
+      {/* ── Profil ── */}
       {activeTab === 'profile' && (
         <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
           <h2 className="font-semibold text-slate-800">Informations publiques</h2>
@@ -234,6 +242,7 @@ export default function InstructorSettingsPage() {
         </div>
       )}
 
+      {/* ── Apparence ── */}
       {activeTab === 'branding' && (
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
@@ -305,64 +314,168 @@ export default function InstructorSettingsPage() {
         </div>
       )}
 
+      {/* ── Domaine ── */}
       {activeTab === 'domain' && (
         <div className="space-y-5">
+
+          {/* Sous-domaine gratuit inclus */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
-            <h2 className="font-semibold text-slate-800 mb-1">Votre sous-domaine</h2>
-            <p className="text-slate-500 text-sm mb-4">Genere automatiquement a partir de votre nom</p>
+            <h2 className="font-semibold text-slate-800 mb-1">Votre sous-domaine gratuit</h2>
+            <p className="text-slate-500 text-sm mb-4">
+              Genere automatiquement — inclus dans tous les plans
+            </p>
             <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span className="text-sm font-mono text-green-800">{subdomainLabel}</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+              <span className="text-sm font-mono text-green-800 break-all">{subdomainLabel}</span>
             </div>
-            <p className="text-xs text-slate-400 mt-2">Ce sous-domaine est actif et pointe vers votre page publique.</p>
+            <p className="text-xs text-slate-400 mt-2">
+              Ce sous-domaine est actif et pointe vers votre page publique. Aucune configuration requise.
+            </p>
           </div>
 
+          {/* Domaine personnalise */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
             <h2 className="font-semibold text-slate-800 mb-1">Domaine personnalise</h2>
-            <p className="text-slate-500 text-sm mb-4">Connectez votre propre nom de domaine</p>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Votre domaine</label>
-              <input value={customDomain} onChange={(e) => setCustomDomain(e.target.value.toLowerCase().trim())} placeholder="formations.votresite.com" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all" />
+            <p className="text-slate-500 text-sm mb-4">
+              Connectez votre propre domaine acheté chez un registrar
+            </p>
+
+            {/* Achat domaine */}
+            <div className="mb-4">
+              <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">
+                Acheter un nom de domaine chez :
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {DOMAIN_PROVIDERS.map((provider) => (
+                  
+                    key={provider.name}
+                    href={provider.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 ' + provider.color}
+                  >
+                    {provider.name}
+                    <ExternalLink size={11} />
+                  </a>
+                ))}
+              </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Votre domaine personnalise
+              </label>
+              <input
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value.toLowerCase().trim())}
+                placeholder="formations.votresite.com"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Exemple : formations.monsiteweb.com ou cours.monentreprise.com
+              </p>
+            </div>
+
+            {/* Instructions DNS */}
             {customDomain && (
               <div className="mt-4 bg-slate-50 rounded-xl p-4 space-y-3">
-                <p className="text-sm font-medium text-slate-700">Configuration DNS requise</p>
+                <p className="text-sm font-medium text-slate-700">
+                  Configuration DNS a faire chez votre registrar
+                </p>
+                <p className="text-xs text-slate-500">
+                  Connectez-vous a votre compte Hostinger, OVH, LWS ou autre et ajoutez ces enregistrements dans la gestion DNS de votre domaine :
+                </p>
+
                 <div className="space-y-2">
+                  {/* CNAME */}
                   <div className="bg-white rounded-lg p-3 border border-slate-200">
-                    <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">CNAME</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
+                      Enregistrement CNAME
+                    </span>
                     <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                      <div><p className="text-slate-400">Nom / Host</p><p className="text-slate-800 mt-0.5">{customDomain.split('.')[0]}</p></div>
-                      <div><p className="text-slate-400">Valeur / Target</p><p className="text-slate-800 mt-0.5">cname.vercel-dns.com</p></div>
+                      <div>
+                        <p className="text-slate-400">Nom / Hote / Sous-domaine</p>
+                        <p className="text-slate-800 mt-0.5 font-bold">{customDomain.split('.')[0]}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Valeur / Cible / Pointe vers</p>
+                        <p className="text-slate-800 mt-0.5 font-bold">cname.vercel-dns.com</p>
+                      </div>
                     </div>
                   </div>
+
+                  {/* TXT */}
                   <div className="bg-white rounded-lg p-3 border border-slate-200">
-                    <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">TXT (verification)</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
+                      Enregistrement TXT (verification)
+                    </span>
                     <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                      <div><p className="text-slate-400">Nom / Host</p><p className="text-slate-800 mt-0.5">@</p></div>
-                      <div><p className="text-slate-400">Valeur</p><p className="text-slate-800 mt-0.5 break-all">{verifyValue}</p></div>
+                      <div>
+                        <p className="text-slate-400">Nom / Hote</p>
+                        <p className="text-slate-800 mt-0.5 font-bold">@</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Valeur</p>
+                        <p className="text-slate-800 mt-0.5 break-all font-bold">{verifyValue}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400">La propagation DNS peut prendre jusqu'a 48h.</p>
+
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  La propagation DNS peut prendre de 30 minutes a 48h selon votre registrar.
+                </p>
               </div>
             )}
           </div>
 
+          {/* Etapes Vercel */}
           <div className="bg-sky-50 border border-sky-200 rounded-2xl p-5">
-            <h3 className="font-semibold text-sky-800 mb-2 text-sm">Etapes pour activer le domaine sur Vercel</h3>
-            <ol className="space-y-1.5 text-xs text-sky-700">
-              <li>1. Sauvegardez votre domaine personnalise ci-dessus</li>
-              <li>2. Allez sur vercel.com - votre projet - Settings - Domains</li>
-              <li>3. Cliquez "Add Domain" et entrez votre domaine</li>
-              <li>4. Suivez les instructions DNS de Vercel</li>
-              <li>5. Attendez la propagation (jusqu'a 48h)</li>
+            <h3 className="font-semibold text-sky-800 mb-3 text-sm flex items-center gap-2">
+              <Globe size={15} />
+              Apres avoir configure le DNS, activez le domaine sur Vercel
+            </h3>
+            <ol className="space-y-2 text-xs text-sky-700">
+              <li className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span>
+                Sauvegardez d'abord votre domaine ci-dessus
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span>
+                Allez sur vercel.com et connectez-vous
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span>
+                Ouvrez votre projet lfdweblearn → Settings → Domains
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span>
+                Cliquez "Add Domain" et entrez votre domaine exact
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-sky-200 text-sky-800 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">5</span>
+                Vercel verifiera automatiquement le DNS configure chez votre registrar
+              </li>
             </ol>
+            
+              href="https://vercel.com/docs/projects/domains/add-a-domain"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-xs text-sky-600 font-medium hover:underline"
+            >
+              <ExternalLink size={12} />
+              Documentation officielle Vercel
+            </a>
           </div>
         </div>
       )}
 
       <div className="flex justify-end pb-8">
-        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-xl font-medium transition-all disabled:opacity-50">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-xl font-medium transition-all disabled:opacity-50"
+        >
           {saving ? <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> : <Save size={16} />}
           Sauvegarder les parametres
         </button>
