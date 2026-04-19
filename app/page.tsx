@@ -1,7 +1,7 @@
 // app/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { logout } from '@/lib/firebase/auth'
@@ -12,20 +12,21 @@ import {
   ArrowRight, CheckCircle, Menu, X, Play,
   Award, TrendingUp, Heart, Mail, Phone,
   MapPin, Facebook, Twitter, Instagram, Youtube,
-  ChevronDown, LogOut, Settings, LayoutDashboard
+  ChevronDown, LogOut, Settings, LayoutDashboard,
+  Moon, Sun
 } from 'lucide-react'
 
 const NAV_LINKS = [
-  { label: 'Fonctionnalités', href: '#features' },
-  { label: 'Comment ça marche', href: '#how' },
+  { label: 'Fonctionnalites', href: '#features' },
+  { label: 'Comment ca marche', href: '#how' },
   { label: 'Tarifs', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]
 
 const HERO_STATS = [
-  { value: '100%', label: 'Gratuit pour débuter' },
-  { value: 'Mobile Money', label: 'Paiement intégré' },
-  { value: 'Anti-DL', label: 'Contenu protégé' },
+  { value: '100%', label: 'Gratuit pour debuter' },
+  { value: 'Mobile Money', label: 'Paiement integre' },
+  { value: 'Anti-DL', label: 'Contenu protege' },
 ]
 
 const PAYMENT_METHODS = ['MTN Mobile Money', 'Moov Money', 'Wave', 'Orange Money', 'Feexpay']
@@ -33,58 +34,58 @@ const PAYMENT_METHODS = ['MTN Mobile Money', 'Moov Money', 'Wave', 'Orange Money
 const FEATURES = [
   {
     icon: BookOpen,
-    title: 'Créez vos formations',
-    description: 'Vidéos, PDFs, audios, images. Organisez en modules et leçons avec une interface intuitive.',
+    title: 'Creez vos formations',
+    description: 'Videos, PDFs, audios, images. Organisez en modules et lecons avec une interface intuitive.',
     color: 'bg-sky-50 text-sky-600',
   },
   {
     icon: Shield,
-    title: 'Contenu 100% protégé',
-    description: 'Streaming sécurisé anti-téléchargement. Tokens signés, watermark dynamique et protection avancée.',
+    title: 'Contenu 100% protege',
+    description: 'Streaming securise anti-telechargement. Tokens signes, watermark dynamique et protection avancee.',
     color: 'bg-green-50 text-green-600',
   },
   {
     icon: Zap,
     title: 'Paiement Mobile Money',
-    description: 'Intégration Feexpay complète. Acceptez MTN, Moov, Wave et Orange Money instantanément.',
+    description: 'Integration Feexpay complete. Acceptez MTN, Moov, Wave et Orange Money instantanement.',
     color: 'bg-orange-50 text-orange-600',
   },
   {
     icon: Globe,
     title: 'Votre propre domaine',
-    description: 'Sous-domaine gratuit inclus. Connectez votre domaine personnalisé pour une image professionnelle.',
+    description: 'Sous-domaine gratuit inclus. Connectez votre domaine personnalise pour une image professionnelle.',
     color: 'bg-purple-50 text-purple-600',
   },
   {
     icon: Users,
-    title: 'Espace élève complet',
-    description: 'Tableau de bord, progression, historique des achats. Expérience optimale pour vos apprenants.',
+    title: 'Espace eleve complet',
+    description: 'Tableau de bord, progression, historique des achats. Experience optimale pour vos apprenants.',
     color: 'bg-teal-50 text-teal-600',
   },
   {
     icon: TrendingUp,
     title: 'Analytiques et revenus',
-    description: 'Suivez vos ventes, vos élèves et vos performances en temps réel depuis votre tableau de bord.',
+    description: 'Suivez vos ventes, vos eleves et vos performances en temps reel depuis votre tableau de bord.',
     color: 'bg-amber-50 text-amber-600',
   },
 ]
 
 const STEPS = [
   {
-    title: 'Créez votre compte',
+    title: 'Creez votre compte',
     description: 'Inscrivez-vous gratuitement et activez votre espace formateur en quelques secondes.',
   },
   {
-    title: 'Créez votre formation',
-    description: 'Ajoutez vos modules, uploadez vidéos, PDFs et contenus pédagogiques facilement.',
+    title: 'Creez votre formation',
+    description: 'Ajoutez vos modules, uploadez videos, PDFs et contenus pedagogiques facilement.',
   },
   {
     title: 'Personnalisez votre page',
-    description: 'Configurez couleurs, logo et domaine pour une identité visuelle professionnelle.',
+    description: 'Configurez couleurs, logo et domaine pour une identite visuelle professionnelle.',
   },
   {
     title: 'Vendez et encaissez',
-    description: 'Partagez votre lien, acceptez Mobile Money et suivez vos revenus en temps réel.',
+    description: 'Partagez votre lien, acceptez Mobile Money et suivez vos revenus en temps reel.',
   },
 ]
 
@@ -96,10 +97,10 @@ const PLANS = [
     featured: false,
     cta: 'Commencer gratuitement',
     features: [
-      'Formations illimitées',
+      'Formations illimitees',
       'Sous-domaine inclus',
       'Paiement Mobile Money',
-      'Espace élève complet',
+      'Espace eleve complet',
       'Support email',
     ],
   },
@@ -111,8 +112,8 @@ const PLANS = [
     cta: 'Essayer 14 jours gratuit',
     features: [
       'Tout du plan Starter',
-      'Domaine personnalisé',
-      'Analytiques avancées',
+      'Domaine personnalise',
+      'Analytiques avancees',
       'Certificats automatiques',
       'Support prioritaire 24/7',
     ],
@@ -122,23 +123,23 @@ const PLANS = [
 const FAQS = [
   {
     q: 'Est-ce vraiment gratuit pour commencer ?',
-    a: 'Oui, le plan Starter est entièrement gratuit et sans limite de temps. Vous pouvez créer autant de formations que vous voulez.',
+    a: 'Oui, le plan Starter est entierement gratuit et sans limite de temps. Vous pouvez creer autant de formations que vous voulez.',
   },
   {
-    q: 'Quels moyens de paiement sont acceptés ?',
-    a: 'Nous acceptons MTN Mobile Money, Moov Money, Wave, Orange Money via Feexpay. Les paiements sont instantanés et sécurisés.',
+    q: 'Quels moyens de paiement sont acceptes ?',
+    a: 'Nous acceptons MTN Mobile Money, Moov Money, Wave, Orange Money via Feexpay. Les paiements sont instantanes et securises.',
   },
   {
-    q: 'Comment protéger mes vidéos contre le téléchargement ?',
-    a: 'Toutes vos vidéos sont streamées via Bunny.net avec des tokens signés et un filigrane dynamique. Impossible de les télécharger.',
+    q: 'Comment proteger mes videos contre le telechargement ?',
+    a: 'Toutes vos videos sont streamees via Bunny.net avec des tokens signes et un filigrane dynamique. Impossible de les telecharger.',
   },
   {
     q: 'Puis-je utiliser mon propre nom de domaine ?',
-    a: 'Oui, avec le plan Pro vous pouvez connecter votre domaine personnalisé. Un sous-domaine gratuit est inclus dans tous les plans.',
+    a: 'Oui, avec le plan Pro vous pouvez connecter votre domaine personnalise. Un sous-domaine gratuit est inclus dans tous les plans.',
   },
   {
     q: "Comment recevoir l'argent de mes ventes ?",
-    a: "Les paiements sont collectés sur votre compte Feexpay directement. Vous gardez le contrôle total de vos revenus.",
+    a: "Les paiements sont collectes sur votre compte Feexpay directement. Vous gardez le controle total de vos revenus.",
   },
 ]
 
@@ -150,18 +151,55 @@ const SOCIALS = [
 ]
 
 const FOOTER_PLATFORM = [
-  { label: 'Créer une formation', href: '/register' },
+  { label: 'Creer une formation', href: '/register' },
   { label: 'Se connecter', href: '/login' },
   { label: 'Tarifs', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]
 
 const FOOTER_LEGAL = [
-  { label: 'Mentions légales', href: '/mentions-legales' },
-  { label: 'Politique de confidentialité', href: '/confidentialite' },
+  { label: 'Mentions legales', href: '/mentions-legales' },
+  { label: 'Politique de confidentialite', href: '/confidentialite' },
   { label: "Conditions d'utilisation", href: '/conditions-utilisation' },
   { label: 'Politique de remboursement', href: '/remboursement' },
 ]
+
+function DarkModeToggle() {
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.classList.add('dark')
+      setDark(true)
+    }
+  }, [])
+
+  const toggle = () => {
+    if (dark) {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    } else {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    }
+    setDark(!dark)
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+      title={dark ? 'Mode clair' : 'Mode sombre'}
+    >
+      {dark
+        ? <Sun size={16} className="text-amber-400" />
+        : <Moon size={16} className="text-slate-500" />
+      }
+    </button>
+  )
+}
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -174,15 +212,15 @@ export default function LandingPage() {
     await logout()
     setProfileOpen(false)
     setMenuOpen(false)
-    toast.success('Déconnecté')
+    toast.success('Deconnecte')
     router.refresh()
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white dark:bg-slate-950 font-sans">
 
       {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="h-16 flex items-center justify-between">
 
@@ -201,7 +239,7 @@ export default function LandingPage() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-sm text-slate-600 hover:text-sky-600 font-medium transition-colors"
+                  className="text-sm text-slate-600 dark:text-slate-300 hover:text-sky-600 font-medium transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -209,23 +247,24 @@ export default function LandingPage() {
             </nav>
 
             <div className="hidden md:flex items-center gap-3">
+              <DarkModeToggle />
               {isAuthenticated && userProfile ? (
                 <div className="relative">
                   <button
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl transition-all"
+                    className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl transition-all"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600 font-bold text-xs">
+                    <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900 flex items-center justify-center text-sky-600 font-bold text-xs">
                       {userProfile.displayName?.charAt(0).toUpperCase()}
                     </div>
                     <div className="text-left">
-                      <p className="text-xs font-semibold text-slate-800 leading-none">
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-none">
                         {userProfile.displayName?.split(' ')[0]}
                       </p>
                       <p className="text-xs text-slate-400 mt-0.5">
                         {userProfile.role === 'instructor' ? 'Formateur'
                           : userProfile.role === 'admin' ? 'Admin'
-                          : 'Élève'}
+                          : 'Eleve'}
                       </p>
                     </div>
                     <ChevronDown size={14} className={`text-slate-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
@@ -237,9 +276,9 @@ export default function LandingPage() {
                         className="fixed inset-0 z-40"
                         onClick={() => setProfileOpen(false)}
                       />
-                      <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl border border-slate-100 shadow-xl py-2 z-50">
-                        <div className="px-4 py-3 border-b border-slate-100">
-                          <p className="text-sm font-semibold text-slate-800 truncate">
+                      <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xl py-2 z-50">
+                        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                             {userProfile.displayName}
                           </p>
                           <p className="text-xs text-slate-400 truncate">{userProfile.email}</p>
@@ -247,7 +286,7 @@ export default function LandingPage() {
                         <Link
                           href="/dashboard"
                           onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-all"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 hover:text-sky-600 transition-all"
                         >
                           <LayoutDashboard size={15} />
                           Mon tableau de bord
@@ -256,19 +295,19 @@ export default function LandingPage() {
                           <Link
                             href="/instructor"
                             onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-all"
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 hover:text-sky-600 transition-all"
                           >
                             <Settings size={15} />
                             Espace formateur
                           </Link>
                         )}
-                        <div className="border-t border-slate-100 mt-1 pt-1">
+                        <div className="border-t border-slate-100 dark:border-slate-700 mt-1 pt-1">
                           <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-all"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                           >
                             <LogOut size={15} />
-                            Déconnexion
+                            Deconnexion
                           </button>
                         </div>
                       </div>
@@ -279,7 +318,7 @@ export default function LandingPage() {
                 <>
                   <Link
                     href="/login"
-                    className="text-sm font-medium text-slate-600 hover:text-sky-600 transition-colors px-3 py-2"
+                    className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 transition-colors px-3 py-2"
                   >
                     Connexion
                   </Link>
@@ -293,50 +332,53 @@ export default function LandingPage() {
               )}
             </div>
 
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
-            >
-              {menuOpen
-                ? <X size={20} className="text-slate-600" />
-                : <Menu size={20} className="text-slate-600" />
-              }
-            </button>
+            <div className="md:hidden flex items-center gap-2">
+              <DarkModeToggle />
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+              >
+                {menuOpen
+                  ? <X size={20} className="text-slate-600 dark:text-slate-300" />
+                  : <Menu size={20} className="text-slate-600 dark:text-slate-300" />
+                }
+              </button>
+            </div>
           </div>
         </div>
 
         {menuOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-1 shadow-lg">
+          <div className="md:hidden border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 space-y-1 shadow-lg">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-600 rounded-xl transition-all"
+                className="block px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 rounded-xl transition-all"
               >
                 {link.label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-slate-100 space-y-2">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
               {isAuthenticated && userProfile ? (
                 <>
-                  <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl">
-                    <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-600 font-bold text-sm">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                    <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-900 flex items-center justify-center text-sky-600 font-bold text-sm">
                       {userProfile.displayName?.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{userProfile.displayName}</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{userProfile.displayName}</p>
                       <p className="text-xs text-slate-400">
                         {userProfile.role === 'instructor' ? 'Formateur'
                           : userProfile.role === 'admin' ? 'Admin'
-                          : 'Élève'}
+                          : 'Eleve'}
                       </p>
                     </div>
                   </div>
                   <Link
                     href="/dashboard"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+                    className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                   >
                     <LayoutDashboard size={16} />
                     Mon tableau de bord
@@ -353,10 +395,10 @@ export default function LandingPage() {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-red-500 border border-red-100 rounded-xl hover:bg-red-50 transition-all"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                   >
                     <LogOut size={16} />
-                    Déconnexion
+                    Deconnexion
                   </button>
                 </>
               ) : (
@@ -364,7 +406,7 @@ export default function LandingPage() {
                   <Link
                     href="/login"
                     onClick={() => setMenuOpen(false)}
-                    className="block text-center px-4 py-3 text-sm font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+                    className="block text-center px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                   >
                     Connexion
                   </Link>
@@ -383,27 +425,27 @@ export default function LandingPage() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-white to-orange-50 py-16 sm:py-24">
+      <section className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-white to-orange-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 py-16 sm:py-24">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-sky-200 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-orange-100 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-10 w-72 h-72 bg-sky-200 dark:bg-sky-900 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-orange-100 dark:bg-orange-900 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white border border-sky-200 rounded-full px-4 py-2 text-sky-700 text-sm font-medium mb-6 shadow-sm">
+            <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800 rounded-full px-4 py-2 text-sky-700 dark:text-sky-400 text-sm font-medium mb-6 shadow-sm">
               <Zap size={14} className="text-orange-500" />
-              Plateforme N°1 de formation en ligne pour l&apos;Afrique
+              Plateforme N°1 de formation en ligne pour l'Afrique
             </div>
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight mb-6">
-              Créez et vendez vos{' '}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight mb-6">
+              Creez et vendez vos{' '}
               <span className="text-sky-600">formations</span>
               <br className="hidden sm:block" />
               {' '}en ligne{' '}
               <span className="text-orange-500">facilement</span>
             </h1>
-            <p className="text-slate-500 text-base sm:text-xl leading-relaxed mb-10 max-w-2xl mx-auto">
-              Partagez votre expertise, construisez votre audience et générez
-              des revenus grâce au Mobile Money. Conçu pour l&apos;Afrique.
+            <p className="text-slate-500 dark:text-slate-400 text-base sm:text-xl leading-relaxed mb-10 max-w-2xl mx-auto">
+              Partagez votre expertise, construisez votre audience et generez
+              des revenus grace au Mobile Money. Concu pour l'Afrique.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               {isAuthenticated ? (
@@ -419,23 +461,22 @@ export default function LandingPage() {
                   href="/register"
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold px-8 py-4 rounded-2xl transition-all shadow-lg shadow-sky-200 text-base"
                 >
-                  Créer mon espace gratuitement
+                  Creer mon espace gratuitement
                   <ArrowRight size={18} />
                 </Link>
               )}
               <Link
                 href="#how"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:border-sky-300 font-medium px-8 py-4 rounded-2xl transition-all text-base shadow-sm"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-sky-300 font-medium px-8 py-4 rounded-2xl transition-all text-base shadow-sm"
               >
                 <Play size={16} className="text-sky-500" />
-                Voir comment ça marche
+                Voir comment ca marche
               </Link>
             </div>
-
             <div className="mt-14 grid grid-cols-3 gap-4 max-w-lg mx-auto">
               {HERO_STATS.map((s) => (
                 <div key={s.label} className="text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-slate-800">{s.value}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">{s.value}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{s.label}</p>
                 </div>
               ))}
@@ -445,14 +486,14 @@ export default function LandingPage() {
       </section>
 
       {/* LOGOS CONFIANCE */}
-      <section className="py-10 bg-slate-50 border-y border-slate-100">
+      <section className="py-10 bg-slate-50 dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <p className="text-center text-xs font-medium text-slate-400 uppercase tracking-widest mb-6">
-            Paiements acceptés
+            Paiements acceptes
           </p>
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-12">
             {PAYMENT_METHODS.map((m) => (
-              <div key={m} className="text-sm font-bold text-slate-400 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+              <div key={m} className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                 {m}
               </div>
             ))}
@@ -461,15 +502,15 @@ export default function LandingPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="py-16 sm:py-24 bg-white">
+      <section id="features" className="py-16 sm:py-24 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-sky-600 uppercase tracking-widest">Fonctionnalités</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mt-2 mb-4">
+            <span className="text-sm font-semibold text-sky-600 uppercase tracking-widest">Fonctionnalites</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mt-2 mb-4">
               Tout ce dont vous avez besoin
             </h2>
-            <p className="text-slate-500 max-w-xl mx-auto">
-              Une plateforme complète pour créer, vendre et gérer vos formations en ligne
+            <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+              Une plateforme complete pour creer, vendre et gerer vos formations en ligne
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -478,13 +519,13 @@ export default function LandingPage() {
               return (
                 <div
                   key={feat.title}
-                  className="group bg-white border border-slate-100 rounded-2xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className="group bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${feat.color}`}>
                     <Icon size={22} />
                   </div>
-                  <h3 className="font-semibold text-slate-800 mb-2 text-base">{feat.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{feat.description}</p>
+                  <h3 className="font-semibold text-slate-800 dark:text-white mb-2 text-base">{feat.title}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{feat.description}</p>
                 </div>
               )
             })}
@@ -493,24 +534,24 @@ export default function LandingPage() {
       </section>
 
       {/* COMMENT CA MARCHE */}
-      <section id="how" className="py-16 sm:py-24 bg-slate-50">
+      <section id="how" className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-sky-600 uppercase tracking-widest">Processus</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mt-2 mb-4">
-              Comment ça marche ?
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mt-2 mb-4">
+              Comment ca marche ?
             </h2>
-            <p className="text-slate-500">Lancez votre formation en 4 étapes simples</p>
+            <p className="text-slate-500 dark:text-slate-400">Lancez votre formation en 4 etapes simples</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {STEPS.map((step, i) => (
-              <div key={step.title} className="flex items-start gap-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <div key={step.title} className="flex items-start gap-5 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
                 <div className="w-12 h-12 rounded-2xl bg-sky-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md shadow-sky-200">
                   {i + 1}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-800 mb-1">{step.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{step.description}</p>
+                  <h3 className="font-semibold text-slate-800 dark:text-white mb-1">{step.title}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -519,14 +560,14 @@ export default function LandingPage() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="py-16 sm:py-24 bg-white">
+      <section id="pricing" className="py-16 sm:py-24 bg-white dark:bg-slate-950">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-sky-600 uppercase tracking-widest">Tarifs</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mt-2 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mt-2 mb-4">
               Simple et transparent
             </h2>
-            <p className="text-slate-500">Commencez gratuitement, évoluez selon vos besoins</p>
+            <p className="text-slate-500 dark:text-slate-400">Commencez gratuitement, evoluez selon vos besoins</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {PLANS.map((plan) => (
@@ -535,7 +576,7 @@ export default function LandingPage() {
                 className={`rounded-2xl p-8 border relative ${
                   plan.featured
                     ? 'bg-sky-600 border-sky-600 text-white shadow-2xl shadow-sky-200 scale-105'
-                    : 'bg-white border-slate-200 shadow-sm'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'
                 }`}
               >
                 {plan.featured && (
@@ -543,11 +584,11 @@ export default function LandingPage() {
                     Populaire
                   </span>
                 )}
-                <h3 className={`text-xl font-bold mb-1 ${plan.featured ? 'text-white' : 'text-slate-800'}`}>
+                <h3 className={`text-xl font-bold mb-1 ${plan.featured ? 'text-white' : 'text-slate-800 dark:text-white'}`}>
                   {plan.name}
                 </h3>
                 <div className="flex items-end gap-1 mb-1">
-                  <span className={`text-4xl font-bold ${plan.featured ? 'text-white' : 'text-slate-800'}`}>
+                  <span className={`text-4xl font-bold ${plan.featured ? 'text-white' : 'text-slate-800 dark:text-white'}`}>
                     {plan.price}
                   </span>
                 </div>
@@ -558,7 +599,7 @@ export default function LandingPage() {
                   {plan.features.map((planFeat) => (
                     <li key={planFeat} className="flex items-center gap-2.5 text-sm">
                       <CheckCircle size={16} className={plan.featured ? 'text-sky-200 flex-shrink-0' : 'text-green-500 flex-shrink-0'} />
-                      <span className={plan.featured ? 'text-sky-100' : 'text-slate-600'}>{planFeat}</span>
+                      <span className={plan.featured ? 'text-sky-100' : 'text-slate-600 dark:text-slate-300'}>{planFeat}</span>
                     </li>
                   ))}
                 </ul>
@@ -579,22 +620,22 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-16 sm:py-24 bg-slate-50">
+      <section id="faq" className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-sky-600 uppercase tracking-widest">FAQ</span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mt-2 mb-4">
-              Questions fréquentes
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white mt-2 mb-4">
+              Questions frequentes
             </h2>
           </div>
           <div className="space-y-3">
             {FAQS.map((faq, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
                 <button
                   onClick={() => setFaqOpen(faqOpen === i ? null : i)}
                   className="w-full flex items-center justify-between p-5 text-left"
                 >
-                  <span className="font-medium text-slate-800 text-sm pr-4">{faq.q}</span>
+                  <span className="font-medium text-slate-800 dark:text-white text-sm pr-4">{faq.q}</span>
                   <ChevronDown
                     size={18}
                     className={`text-slate-400 flex-shrink-0 transition-transform ${faqOpen === i ? 'rotate-180' : ''}`}
@@ -602,7 +643,7 @@ export default function LandingPage() {
                 </button>
                 {faqOpen === i && (
                   <div className="px-5 pb-5">
-                    <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{faq.a}</p>
                   </div>
                 )}
               </div>
@@ -618,7 +659,7 @@ export default function LandingPage() {
             <Award size={32} className="text-white" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Prêt à partager votre expertise ?
+            Pret a partager votre expertise ?
           </h2>
           <p className="text-sky-100 mb-10 text-lg max-w-xl mx-auto">
             Rejoignez des milliers de formateurs africains qui transmettent
@@ -639,14 +680,14 @@ export default function LandingPage() {
                   href="/register"
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 py-4 rounded-2xl transition-all shadow-lg text-base"
                 >
-                  Créer mon compte gratuitement
+                  Creer mon compte gratuitement
                   <ArrowRight size={18} />
                 </Link>
                 <Link
                   href="/login"
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-medium px-8 py-4 rounded-2xl transition-all text-base"
                 >
-                  J&apos;ai déjà un compte
+                  J'ai deja un compte
                 </Link>
               </>
             )}
@@ -658,7 +699,6 @@ export default function LandingPage() {
       <footer className="bg-slate-900 text-slate-400">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-
             <div className="lg:col-span-1">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-sky-600 rounded-xl flex items-center justify-center">
@@ -670,7 +710,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className="text-sm leading-relaxed mb-4">
-                La plateforme de formation en ligne professionnelle dédiée à l&apos;Afrique.
+                La plateforme de formation en ligne professionnelle dediee a l'Afrique.
                 Par La faveur infinie de Dieu.
               </p>
               <div className="flex items-center gap-3">
@@ -688,7 +728,6 @@ export default function LandingPage() {
                 })}
               </div>
             </div>
-
             <div>
               <h4 className="text-white font-semibold mb-4 text-sm">Plateforme</h4>
               <ul className="space-y-2.5">
@@ -701,9 +740,8 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm">Légal</h4>
+              <h4 className="text-white font-semibold mb-4 text-sm">Legal</h4>
               <ul className="space-y-2.5">
                 {FOOTER_LEGAL.map((l) => (
                   <li key={l.label}>
@@ -714,7 +752,6 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-
             <div>
               <h4 className="text-white font-semibold mb-4 text-sm">Contact</h4>
               <ul className="space-y-3">
@@ -728,22 +765,21 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2.5 text-sm">
                   <MapPin size={15} className="text-sky-400 flex-shrink-0" />
-                  Cotonou, Bénin
+                  Cotonou, Benin
                 </li>
               </ul>
             </div>
           </div>
-
           <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-center sm:text-left">
-              © 2024 LFD Web Learn —{' '}
+              2024 LFD Web Learn —{' '}
               <span className="text-sky-400">La faveur infinie de Dieu</span>.
-              Tous droits réservés.
+              Tous droits reserves.
             </p>
             <div className="flex items-center gap-1 text-sm">
               <span>Fait avec</span>
               <Heart size={14} className="text-red-400 mx-1" />
-              <span>pour l&apos;Afrique</span>
+              <span>pour l'Afrique</span>
             </div>
           </div>
         </div>

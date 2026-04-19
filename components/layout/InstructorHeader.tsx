@@ -68,7 +68,7 @@ export default function InstructorHeader() {
     : '/instructor/settings'
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between px-6 flex-shrink-0">
+    <header className="hidden lg:flex h-16 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 items-center justify-between px-6 flex-shrink-0">
       <div>
         <h2 className="text-sm font-medium text-slate-800 dark:text-slate-100">
           Bonjour, {userProfile?.displayName?.split(' ')[0] || 'Formateur'} 👋
@@ -83,10 +83,7 @@ export default function InstructorHeader() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Dark mode */}
         <DarkModeToggle />
-
-        {/* Ma page publique */}
         <Link
           href={publicPageUrl}
           target="_blank"
@@ -96,14 +93,10 @@ export default function InstructorHeader() {
           <ExternalLink size={14} />
           Ma page
         </Link>
-
-        {/* Notifications */}
         <button className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
           <Bell size={16} className="text-slate-500 dark:text-slate-400" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
         </button>
-
-        {/* Avatar */}
         <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-900 flex items-center justify-center text-sky-600 font-semibold text-sm">
           {userProfile?.displayName?.charAt(0).toUpperCase() || 'F'}
         </div>
