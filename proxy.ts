@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'lfdweblearn.com'
+const VERCEL_URL = process.env.VERCEL_URL || 'lfdweblearn.vercel.app'
 
 const PROTECTED_ROUTES = ['/dashboard', '/instructor', '/admin', '/learn']
 const AUTH_ROUTES = ['/login', '/register']
@@ -35,8 +36,6 @@ export async function proxy(request: NextRequest) {
   // ── Sous-domaine formateur : slug.lfdweblearn.com ────
   if (!isRootDomain && hostname.endsWith('.' + ROOT_DOMAIN)) {
     const slug = hostname.replace('.' + ROOT_DOMAIN, '')
-
-    // Rewrite UNIQUEMENT le pathname, pas le hostname
     const url = request.nextUrl.clone()
     url.pathname = '/' + slug + (pathname === '/' ? '' : pathname)
     return NextResponse.rewrite(url)
@@ -45,9 +44,9 @@ export async function proxy(request: NextRequest) {
   // ── Domaine personnalise externe ─────────────────────
   if (!isRootDomain) {
     try {
-      const resolveUrl = new URL('/api/resolve-domain', request.url)
-      resolveUrl.searchParams.set('domain', hostname)
-      const res = await fetch(resolveUrl.toString())
+      // Utiliser lfdweblearn.vercel.app pour eviter les redirections
+      const apiUrl = 'https://lfdweblearn.vercel.app/api/resolve-domain?domain=' + encodeURIComponent(hostname)
+      const res = await fetch(apiUrl, { redirect: 'follow' })
       if (res.ok) {
         const data = await res.json()
         if (data.slug) {
@@ -56,7 +55,9 @@ export async function proxy(request: NextRequest) {
           return NextResponse.rewrite(url)
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error('resolve-domain error:', e)
+    }
 
     const url = request.nextUrl.clone()
     url.pathname = '/instructor-not-found'
@@ -87,7 +88,6 @@ export async function proxy(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
   }
 
-  // ── Protection routes ─────────────────────────────────
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r))
   if (isProtected && !token) {
     const loginUrl = new URL('/login', request.url)
@@ -99,7 +99,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // ── Protection APIs ───────────────────────────────────
   const isProtectedApi = PROTECTED_API.some((r) => pathname.startsWith(r))
   if (isProtectedApi && !token) {
     return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
@@ -111,4 +110,3 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
-// 2026-04-19 08:42:52
