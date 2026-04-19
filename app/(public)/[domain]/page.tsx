@@ -187,7 +187,7 @@ export default async function InstructorPublicPage({ params }: Props) {
                     </div>
 
                     <Link
-                      href={'/register?course=' + course.id + '&instructor=' + slug}
+                      href={'https://lfdweblearn.com/register?course=' + course.id + '&instructor=' + slug}
                       className="block w-full text-center text-white font-semibold py-3 rounded-xl text-sm transition-all hover:opacity-90 active:scale-95"
                       style={{ backgroundColor: primary }}
                     >
