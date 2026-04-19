@@ -9,56 +9,71 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
 }
 
 const AUTH_ROUTES = ['/login', '/register']
-
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'lfdweblearn.com'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hostname = request.headers.get('host') || ''
   const token = request.cookies.get('firebase-token')?.value
 
-  // ── Gestion domaines personnalisés ───────────────────────
+  // ── Gestion domaines personnalisés et sous-domaines ──────
+  const isVercelApp = hostname.includes('vercel.app')
+  const isLocalhost = hostname.includes('localhost')
   const isRootDomain =
     hostname === ROOT_DOMAIN ||
-    hostname === `www.${ROOT_DOMAIN}` ||
-    hostname.includes('localhost') ||
-    hostname.includes('vercel.app')
+    hostname === 'www.' + ROOT_DOMAIN ||
+    isVercelApp ||
+    isLocalhost
 
   if (!isRootDomain) {
-    // Domaine personnalisé → chercher le formateur
-    // Réécrire vers /api/resolve-domain pour le SSR
-    const url = request.nextUrl.clone()
-
-    // Vérifier si c'est un sous-domaine lfdweblearn.com
+    // Sous-domaine formateur : gerard-sononkpon.lfdweblearn.com
     const isSubdomain =
-      hostname.endsWith(`.${ROOT_DOMAIN}`) &&
+      hostname.endsWith('.' + ROOT_DOMAIN) &&
       !hostname.startsWith('www.')
 
     if (isSubdomain) {
-      const slug = hostname.replace(`.${ROOT_DOMAIN}`, '')
-      url.pathname = `/${slug}${pathname === '/' ? '' : pathname}`
+      const slug = hostname.replace('.' + ROOT_DOMAIN, '')
+
+      // Réécrire vers la page publique du formateur
+      const url = request.nextUrl.clone()
+      url.pathname = '/' + slug + (pathname === '/' ? '' : pathname)
       return NextResponse.rewrite(url)
     }
 
-    // Domaine externe personnalisé
-    url.searchParams.set('customDomain', hostname)
+    // Domaine personnalisé externe (formations.monsiteweb.com)
+    // Chercher le formateur via l'API interne
+    const url = request.nextUrl.clone()
     url.pathname = '/api/resolve-domain'
-    // Laisser passer, géré par la page dynamique
-    return NextResponse.next()
+    url.searchParams.set('domain', hostname)
+    url.searchParams.set('path', pathname)
+
+    // Réécrire vers la page du formateur trouvé
+    const resolveRes = await fetch(
+      new URL('/api/resolve-domain?domain=' + hostname, request.url)
+    )
+
+    if (resolveRes.ok) {
+      const data = await resolveRes.json()
+      if (data.slug) {
+        const rewriteUrl = request.nextUrl.clone()
+        rewriteUrl.pathname = '/' + data.slug + (pathname === '/' ? '' : pathname)
+        return NextResponse.rewrite(rewriteUrl)
+      }
+    }
+
+    // Domaine non trouvé → page 404 formateur
+    const notFoundUrl = request.nextUrl.clone()
+    notFoundUrl.pathname = '/instructor-not-found'
+    return NextResponse.rewrite(notFoundUrl)
   }
 
   // ── Headers de sécurité ──────────────────────────────────
   const response = NextResponse.next()
-
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=()'
-  )
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
   // ── CSP renforcé pour /learn ─────────────────────────────
   if (pathname.startsWith('/learn')) {
@@ -75,17 +90,13 @@ export async function proxy(request: NextRequest) {
         "frame-ancestors 'none'",
       ].join('; ')
     )
-    response.headers.set(
-      'Cache-Control',
-      'no-store, no-cache, must-revalidate'
-    )
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
   }
 
   // ── Protection routes ────────────────────────────────────
   const isProtected = Object.keys(PROTECTED_ROUTES).some((route) =>
     pathname.startsWith(route)
   )
-
   if (isProtected && !token) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
@@ -105,18 +116,16 @@ export async function proxy(request: NextRequest) {
     '/api/enrollments',
     '/api/instructor',
   ]
-
   const isProtectedApi = PROTECTED_API.some((route) =>
     pathname.startsWith(route)
   )
-
   if (isProtectedApi && !token) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    return NextResponse.json({ error: 'Non autorise' }, { status: 401 })
   }
 
   return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)',],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
 }
